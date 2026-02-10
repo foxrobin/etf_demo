@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ETF 發行商與成分一覽</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- 頁首 -->
+      <header class="header">
+        <h1 class="header__title">ETF 發行商與成分一覽</h1>
+        <p class="header__subtitle">依發行商（Issuer）瀏覽 ETF 代碼及成分占比</p>
+      </header>
+
+      <main class="main">
+        <!-- 左側：發行商列表 -->
+        <section class="issuer-section" aria-label="發行商一覽">
+          <h2 class="issuer-section__title">發行商一覽</h2>
+          <div class="search-box">
+            <input
+              type="text"
+              id="search"
+              class="search-box__input"
+              placeholder="搜尋發行商…"
+              aria-label="搜尋發行商"
+            />
+          </div>
+          <div id="issuer-list" class="issuer-list" role="list"></div>
+        </section>
+
+        <!-- 右側：詳情 -->
+        <section class="detail-section" aria-label="ETF 詳情">
+          <h2 id="detail-title" class="detail-section__title">選擇發行商以查看 ETF 代碼與成分</h2>
+          <div id="detail-content"></div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

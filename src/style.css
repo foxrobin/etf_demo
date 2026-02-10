@@ -1,0 +1,455 @@
+/* ==========================================================================
+   ETF 發行商與成分一覽 - 主樣式
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. 變數與基底
+   -------------------------------------------------------------------------- */
+
+:root {
+  --color-bg: #0f1419;
+  --color-surface: #1a2332;
+  --color-border: #2d3a4d;
+  --color-text: #e6edf3;
+  --color-text-muted: #8b9cb3;
+  --color-accent: #58a6ff;
+  --color-accent-hover: #79b8ff;
+  --color-success: #3fb950;
+  --color-error: #f85149;
+  --radius: 8px;
+  --font-sans: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* --------------------------------------------------------------------------
+   2. 版面與頁首
+   -------------------------------------------------------------------------- */
+
+#app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.header {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.header__title {
+  margin: 0 0 0.25rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.header__subtitle {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.main {
+  display: grid;
+  gap: 2rem;
+}
+
+@media (min-width: 900px) {
+  .main {
+    grid-template-columns: 340px 1fr;
+    align-items: start;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. 發行商區塊（左側）
+   -------------------------------------------------------------------------- */
+
+.issuer-section__title,
+.detail-section__title {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.issuer-section .search-box {
+  margin-bottom: 1rem;
+}
+
+.issuer-section .search-box__input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.95rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  outline: none;
+}
+
+.issuer-section .search-box__input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.issuer-section .search-box__input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+}
+
+.issuer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.issuer-card {
+  padding: 0.75rem 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.issuer-card:hover {
+  background: #223044;
+  border-color: var(--color-accent);
+}
+
+.issuer-card--active {
+  border-color: var(--color-accent);
+  background: rgba(88, 166, 255, 0.08);
+}
+
+.issuer-card__name {
+  font-weight: 500;
+  margin-bottom: 0.2rem;
+}
+
+.issuer-card__meta {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.issuer-card__meta span + span {
+  margin-left: 0.75rem;
+}
+
+/* --------------------------------------------------------------------------
+   4. 詳情區（右側）標題與控制列
+   -------------------------------------------------------------------------- */
+
+.detail-section {
+  min-height: 200px;
+}
+
+.detail-section__title {
+  margin-bottom: 0.75rem;
+}
+
+.api-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.api-controls__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.api-controls input[type="text"] {
+  padding: 0.35rem 0.5rem;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.api-controls input[type="text"]:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.api-controls #api-url {
+  width: 22rem;
+}
+
+.api-controls #code-query {
+  width: 12rem;
+}
+
+.api-status {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.api-status--error {
+  color: var(--color-error);
+}
+
+.api-status--loading {
+  color: var(--color-accent);
+}
+
+/* --------------------------------------------------------------------------
+   5. 詳情內容區
+   -------------------------------------------------------------------------- */
+
+#detail-content {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.detail-placeholder {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.detail-inner {
+  padding: 1rem 1.25rem;
+}
+
+.detail-inner__heading {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.detail-inner__text {
+  margin: 0 0 1rem;
+}
+
+/* 代碼下拉選單 */
+.code-select-wrap {
+  margin-bottom: 1.25rem;
+}
+
+.code-select {
+  width: 100%;
+  max-width: 20rem;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  font-size: 0.95rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238b9cb3' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+}
+
+.code-select:hover {
+  border-color: var(--color-accent);
+}
+
+.code-select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+}
+
+/* ETF 詳情（API 回傳） */
+.etf-detail {
+  margin-top: 0.5rem;
+}
+
+.etf-detail__title {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* 繁／简／英分頁 */
+.etf-lang-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.etf-lang-tab {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.etf-lang-tab:hover {
+  color: var(--color-text);
+  border-color: var(--color-accent);
+}
+
+.etf-lang-tab--active {
+  color: var(--color-bg);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.etf-detail__panels {
+  position: relative;
+}
+
+.etf-detail__panel[hidden] {
+  display: none;
+}
+
+.etf-detail__grid {
+  display: grid;
+  gap: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+.etf-detail__row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 0.5rem;
+  align-items: start;
+}
+
+.etf-detail__label {
+  color: var(--color-text-muted);
+}
+
+.etf-detail__value {
+  word-break: break-word;
+}
+
+/* cValueCd (Field 64) 區塊 */
+.etf-detail__valuecd {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.etf-detail__valuecd-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.etf-detail__valuecd-remark {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.etf-detail__valuecd-table-wrap {
+  overflow-x: auto;
+}
+
+.etf-detail__valuecd-table {
+  font-size: 0.85rem;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.etf-detail__valuecd-table th,
+.etf-detail__valuecd-table td {
+  padding: 0.35rem 0.6rem;
+  text-align: left;
+  border: 1px solid var(--color-border);
+}
+
+.etf-detail__valuecd-key {
+  font-weight: 600;
+}
+
+.etf-detail__valuecd-desc {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+/* 成分表 */
+.constituent-table-wrap {
+  overflow-x: auto;
+  margin-top: 0.5rem;
+}
+
+.constituent-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.constituent-table th,
+.constituent-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.constituent-table th {
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.constituent-table__percent {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-success);
+}
+
+.constituent-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.constituent-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* --------------------------------------------------------------------------
+   6. 共用狀態樣式
+   -------------------------------------------------------------------------- */
+
+.no-data {
+  padding: 1rem 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.loading {
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.error {
+  padding: 1.5rem;
+  color: var(--color-error);
+  background: rgba(248, 81, 73, 0.1);
+  border-radius: var(--radius);
+}
