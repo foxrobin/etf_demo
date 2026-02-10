@@ -2,7 +2,7 @@ ETF Issuer Total Count,,,,,,,
 Last Update: 6/Feb/2026,,,,,,,
 ,,,,,,,
 Issuer (Chinese),No of ETFs (1 ETF code counts as 1 ETF),Data File,PDF,Not Provided,Data Source,Code List,Issuer Code
-DWS Investment S.A.,6,,,,,,
+DWS Investment S.A.,6,TRUE,TRUE,,https://etf.dws.com/zh-hk/product-finder/,,xtrackers
 Invesco Capital Management LLC,3,,,,,,
 SPDR金ETF,3,,,,,,
 三星資產運用（香港）有限公司,11,,TRUE,,https://www.samsungetfhk.com/,3135,samsung

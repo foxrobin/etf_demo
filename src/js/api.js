@@ -51,7 +51,7 @@ export function getCachedDetail(code) {
  */
 function buildEtfInfoPayload(code) {
   const params = new URLSearchParams();
-  params.set('reqid', '910j');
+  params.set('reqid', '910j'); // 910j fo json response, 910x for XML resoponse
   params.set('companycd', '');
   params.set('mpid', '');
   params.set('counter', '');
