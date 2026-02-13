@@ -2,9 +2,9 @@
  * UI：發行商列表、詳情區、下拉選單、API 狀態與事件綁定
  */
 
-import { ID } from './config.js';
+import { ID, HOLDINGS_CSV_BASE } from './config.js';
 import { fetchEtfByCode, setStatus, getStatus, getCachedDetail } from './api.js';
-import { parseEtfInfo, applyCodeList, getConstituents } from './data.js';
+import { parseEtfInfo, applyCodeList, getConstituents, parseHoldingsCsv, getHoldingsCandidateCodes } from './data.js';
 import { escapeHtml } from './utils.js';
 import { LOGICAL_FIELDS, VALUE_CD_LABELS, LANG_TABS } from './etf-fields.js';
 
@@ -23,6 +23,12 @@ function $(id) {
 let allIssuers = [];
 let selectedIssuer = null;
 let selectedCode = null;
+/** @type {Record<string, Array<{ name: string, percent: number }> | null>} */
+const constituentsCache = {};
+/** 正在載入持股的 code，用於顯示 loading 且不重複觸發 */
+let constituentsLoadingCode = null;
+/** 代碼 → 持股 CSV 檔名，由 holdings_manifest.json 載入 */
+let holdingsManifest = null;
 
 // ---------------------------------------------------------------------------
 // 發行商列表
@@ -81,6 +87,50 @@ function selectCode(code) {
   if (code && !getCachedDetail(code)) {
     fetchEtfByCode(code).then(() => renderDetail()).catch(() => renderDetail());
   }
+}
+
+async function loadHoldingsManifest() {
+  if (holdingsManifest !== null) return holdingsManifest;
+  try {
+    const res = await fetch('/holdings_manifest.json');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && typeof data === 'object') holdingsManifest = data;
+    }
+  } catch (_) {}
+  return holdingsManifest;
+}
+
+/**
+ * 載入指定代碼的成分。僅當 holdings_manifest 有該 code（或候選 code）時才請求，用 manifest 的檔名一次 fetch，簡單迅速。
+ * @param {string} code
+ * @returns {Promise<{ headers: string[], rows: string[][] } | Array<{ name: string, percent: number }> | null>}
+ */
+async function loadConstituentsForCode(code) {
+  code = code ? String(code).trim() : '';
+  if (!code) return null;
+  if (constituentsCache[code] !== undefined) return constituentsCache[code];
+  await loadHoldingsManifest();
+  const candidates = getHoldingsCandidateCodes(code);
+  const base = HOLDINGS_CSV_BASE.replace(/\/?$/, '/');
+  for (const tryCode of candidates) {
+    const filename = holdingsManifest && holdingsManifest[tryCode];
+    if (!filename) continue;
+    const csvUrl = base + filename;
+    try {
+      const res = await fetch(csvUrl);
+      if (!res.ok) continue;
+      const text = await res.text();
+      const { headers, rows } = parseHoldingsCsv(text);
+      if (headers.length && rows.length) {
+        constituentsCache[code] = { headers, rows };
+        return constituentsCache[code];
+      }
+    } catch (_) {}
+  }
+  const fallback = getConstituents(code) || null;
+  if (fallback !== null) constituentsCache[code] = fallback;
+  return fallback;
 }
 
 /**
@@ -210,7 +260,7 @@ function setEtfDetailActiveLang(container, lang) {
 /**
  * 渲染右側詳情區：代碼下拉、API 詳情、成分表
  */
-function renderDetail() {
+async function renderDetail() {
   const titleEl = $(ID.DETAIL_TITLE);
   const contentEl = $(ID.DETAIL_CONTENT);
   if (!contentEl) return;
@@ -239,7 +289,15 @@ function renderDetail() {
     issuerUrlHtml = `<p class="detail-issuer-url"><a href="${escapeHtml(selectedIssuer.url)}" target="_blank" rel="noopener noreferrer" class="detail-issuer-url__link">官網：${escapeHtml(selectedIssuer.url)}</a></p>`;
   }
 
-  const constituents = selectedCode ? getConstituents(selectedCode) : null;
+  const constituents = selectedCode ? constituentsCache[selectedCode] : null;
+  const needLoadConstituents = selectedCode && constituents === undefined;
+  if (needLoadConstituents && constituentsLoadingCode !== selectedCode) {
+    constituentsLoadingCode = selectedCode;
+    loadConstituentsForCode(selectedCode).then(() => {
+      constituentsLoadingCode = null;
+      renderDetail();
+    });
+  }
 
   // 代碼下拉選單
   let codeSelectHtml = '';
@@ -275,9 +333,27 @@ function renderDetail() {
     apiBlock = '<p class="no-data">選擇代碼後會從 EtfInfo.do 取得該 ETF 詳情；若失敗請檢查 API 網址或網路。</p>';
   }
 
-  // 成分表（示範用）
+  // 成分表（優先從 CSV 顯示全部欄位，否則示範數據；載入中顯示 loading）
   let constituentTable = '';
-  if (selectedCode && constituents && !apiData) {
+  const constituentsLoading = needLoadConstituents || constituentsLoadingCode === selectedCode;
+  const hasCsvHoldings = selectedCode && constituents && constituents.headers && constituents.rows;
+  const hasMockHoldings = selectedCode && constituents && Array.isArray(constituents) && constituents.length;
+  if (constituentsLoading) {
+    constituentTable = `<h3 class="detail-inner__heading">持股明細 (ETF ${escapeHtml(selectedCode)})</h3><div class="loading">載入持股中…</div>`;
+  } else if (hasCsvHoldings) {
+    const { headers, rows } = constituents;
+    constituentTable = `
+      <h3 class="detail-inner__heading">持股明細 (ETF ${escapeHtml(selectedCode)})</h3>
+      <div class="constituent-table-wrap">
+        <table class="constituent-table">
+          <thead><tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
+          <tbody>
+            ${rows.map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join('')}</tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } else if (hasMockHoldings) {
     constituentTable = `
       <h3 class="detail-inner__heading">成分占比 (ETF ${escapeHtml(selectedCode)})</h3>
       <div class="constituent-table-wrap">
@@ -289,8 +365,8 @@ function renderDetail() {
         </table>
       </div>
     `;
-  } else if (selectedCode && !apiData) {
-    constituentTable = `<h3 class="detail-inner__heading">成分占比 (ETF ${escapeHtml(selectedCode)})</h3><p class="no-data">此 ETF 暫無成分數據。</p>`;
+  } else if (selectedCode) {
+    constituentTable = `<h3 class="detail-inner__heading">持股明細 (ETF ${escapeHtml(selectedCode)})</h3><p class="no-data">此 ETF 暫無成分數據。</p>`;
   } else if (codes.length && !selectedCode) {
     constituentTable = '<p class="no-data">請從下拉選單選擇代碼以載入 ETF 詳情。</p>';
   }

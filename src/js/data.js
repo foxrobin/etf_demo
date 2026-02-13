@@ -116,3 +116,61 @@ const MOCK_CONSTITUENTS = {
 export function getConstituents(code) {
   return MOCK_CONSTITUENTS[code] || null;
 }
+
+/**
+ * 持股 CSV 嘗試順序：先自己，沒有再 3+最後三碼、2+最後三碼、9+最後三碼。
+ * 8 開頭五位數先去掉首位 8，剩下當作 code 再套上述順序。
+ * @param {string} code - 例如 "2807"、"9807"、"83416"
+ * @returns {string[]}
+ */
+export function getHoldingsCandidateCodes(code) {
+  if (!code) return [code];
+  const c = code.length === 5 && code[0] === '8' ? code.slice(1) : code;
+  const last3 = c.slice(-3);
+  if (last3.length !== 3) return [c];
+  const candidates = [c];
+  for (const r of ['3', '2', '9']) {
+    const x = r + last3;
+    if (!candidates.includes(x)) candidates.push(x);
+  }
+  return candidates;
+}
+
+/**
+ * 回傳用於模糊匹配 _full_holdings_*.csv 的日期：今天 + 昨天起往前 N 天
+ * @param {number} [days=90] 昨天起往前幾天（拉長以涵蓋較舊的檔案）
+ * @returns {string[]}
+ */
+export function getRecentDatesYYYYMMDD(days = 90) {
+  const out = [];
+  const d = new Date();
+  const toStr = (x) => {
+    const y = x.getFullYear();
+    const m = String(x.getMonth() + 1).padStart(2, '0');
+    const day = String(x.getDate()).padStart(2, '0');
+    return `${y}${m}${day}`;
+  };
+  out.push(toStr(d));
+  for (let i = 1; i <= days; i++) {
+    d.setDate(d.getDate() - 1);
+    out.push(toStr(d));
+  }
+  return out;
+}
+
+/**
+ * 解析 full_holdings CSV，保留所有欄位
+ * @param {string} csvText
+ * @returns {{ headers: string[], rows: string[][] }}
+ */
+export function parseHoldingsCsv(csvText) {
+  const lines = csvText.split('\n').map((l) => l.trim()).filter(Boolean);
+  if (lines.length < 2) return { headers: [], rows: [] };
+  const headers = parseCsvLine(lines[0]);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCsvLine(lines[i]);
+    rows.push(headers.map((_, j) => (cols[j] ?? '').trim()));
+  }
+  return { headers, rows };
+}
