@@ -1,5 +1,6 @@
 {
   "globalx": {
+    "url": "https://www.globalxetfs.com.hk/zh-hant/fundlist/",
     "codeList": [
       "3416",
       "83416",
@@ -66,6 +67,7 @@
     ]
   },
   "csop": {
+    "url": "https://www.csopasset.com/tc/products/etf",
     "codeList": [
       "82822",
       "2822",
@@ -133,6 +135,7 @@
     ]
   },
   "samsung": {
+    "url": "https://www.samsungetfhk.com/",
     "codeList": [
       "3135",
       "3172",
@@ -145,6 +148,7 @@
     ]
   },
   "ishares": {
+    "url": "https://www.blackrock.com/hk/zh/products/etf-investments",
     "codeList": [
       "2801",
       "3067",
@@ -159,6 +163,7 @@
     ]
   },
   "efunds": {
+    "url": "https://www.efunds.com.hk/tc/products/",
     "codeList": [
       "3111",
       "3039",
@@ -170,6 +175,7 @@
     ]
   },
   "hangseng": {
+    "url": "https://www.hangsenginvestment.com/",
     "codeList": [
       "3136",
       "83128",
@@ -195,6 +201,7 @@
     ]
   },
   "bosera": {
+    "url": "https://www.bosera.com.hk/",
     "codeList": [
       "3196",
       "83196",
@@ -220,6 +227,7 @@
     ]
   },
   "chinaamc": {
+    "url": "https://www.chinaamc.com.hk/",
     "codeList": [
       "3461",
       "83461",
@@ -266,6 +274,7 @@
     ]
   },
   "premia": {
+    "url": "https://www.premia-partners.com/",
     "codeList": [
       "2803",
       "9803",
@@ -298,7 +307,8 @@
       "9478"
     ]
   },
-    "xtrackers": {
+  "xtrackers": {
+    "url": "https://etf.dws.com/zh-hk/product-finder/",
     "codeList": [
       "3020",
       "3087",
@@ -306,6 +316,176 @@
       "3015",
       "2848",
       "3007"
+    ]
+  },
+  "invesco": {
+    "url": "https://www.invesco.com/hk/en/etfs/invesco-qqq.html",
+    "codeList": [
+      "3455",
+      "83455",
+      "9455"
+    ]
+  },
+  "spdrgold": {
+    "url": "https://www.spdrgoldshares.com/hong-kong/",
+    "codeList": [
+      "2840",
+      "9840",
+      "82840"
+    ]
+  },
+  "microbit": {
+    "url": "https://www.microbit.ai/zh-hant/",
+    "codeList": [
+      "3430",
+      "9430",
+      "3425",
+      "9425"
+    ]
+  },
+  "ssif": {
+    "url": "https://am.ssif.com.hk/zh-hant/products/overview/",
+    "codeList": [
+      "3047",
+      "9047"
+    ]
+  },
+  "icbcubs": {
+    "url": "https://www.icbcubs.com.hk/",
+    "codeList": [
+      "3102",
+      "9102",
+      "83102"
+    ]
+  },
+  "pingan": {
+    "url": "https://asset.pingan.com.hk/zh-hk/Products-and-Services",
+    "codeList": [
+      "3070",
+      "9070",
+      "3406",
+      "9406",
+      "3477",
+      "9477"
+    ]
+  },
+  "cicchkam": {
+    "url": "https://cicchkam.com/tc",
+    "codeList": [
+      "3011",
+      "9011",
+      "3071"
+    ]
+  },
+  "boci-pru": {
+    "url": "https://www.boci-pru.com.hk/zh-hk",
+    "codeList": [
+      "3219",
+      "83219",
+      "2825",
+      "2827",
+      "3024",
+      "3182"
+    ]
+  },
+  "cmschina": {
+    "url": "https://www.cmschina.com.hk/AM/Profile",
+    "codeList": [
+      "3423"
+    ]
+  },
+  "amundietf": {
+    "url": "https://www.amundietf.com.hk/zh/individual/etf-products/search",
+    "codeList": [
+      "82843",
+      "2843",
+      "3012",
+      "83012"
+    ]
+  },
+  "taikang": {
+    "url": "https://hk.taikangasset.cn/hk/",
+    "codeList": [
+      "3457",
+      "3176",
+      "9176"
+    ]
+  },
+  "doofinancial": {
+    "url": "https://www.doofinancial.hk/tc",
+    "codeList": [
+      "3412",
+      "3413",
+      "3426"
+    ]
+  },
+  "fubonfund": {
+    "url": "https://www.fubonfund.com.hk/",
+    "codeList": [
+      "3076",
+      "3021",
+      "3190",
+      "3405",
+      "3427"
+    ]
+  },
+  "valueetf": {
+    "url": "https://www.valueetf.com.hk/trad/money-market-series/",
+    "codeList": [
+      "3480",
+      "9480",
+      "83420",
+      "3420",
+      "3421"
+    ]
+  },
+  "hsbc": {
+    "url": "https://www.assetmanagement.hsbc.com.hk/en/individual-investor/fund-centre/hk2819031405",
+    "codeList": [
+      "2819"
+    ]
+  },
+  "amova": {
+    "url": "https://hk.amova-am.com/institutional",
+    "codeList": [
+      "9072",
+      "3072"
+    ]
+  },
+  "ssga": {
+    "url": "https://www.ssga.com/hk/zh_hk/individual",
+    "codeList": [
+      "2840",
+      "9840",
+      "82840"
+    ]
+  },
+  "harvestglobal": {
+    "url": "https://www.harvestglobal.com.hk/",
+    "codeList": [
+      "3108",
+      "3118",
+      "3179",
+      "3439",
+      "9179",
+      "9439",
+      "83108",
+      "83118"
+    ]
+  },
+  "pando": {
+    "url": "https://www.pandofinance.com.hk/hk/",
+    "codeList": [
+      "3085",
+      "2818",
+      "3056",
+      "3112"
+    ]
+  },
+  "phillipfunds": {
+    "url": "https://www.phillipfunds.com.hk/zh/",
+    "codeList": [
+      "2835"
     ]
   }
 }

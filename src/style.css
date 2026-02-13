@@ -152,6 +152,17 @@ body {
   margin-left: 0.75rem;
 }
 
+.issuer-card__url {
+  margin-left: 0.5rem;
+  color: var(--color-accent);
+  text-decoration: none;
+  font-size: 0.8rem;
+}
+
+.issuer-card__url:hover {
+  text-decoration: underline;
+}
+
 /* --------------------------------------------------------------------------
    4. 詳情區（右側）標題與控制列
    -------------------------------------------------------------------------- */
@@ -246,6 +257,22 @@ body {
 
 .detail-inner__text {
   margin: 0 0 1rem;
+}
+
+/* 發行商官網連結（右側詳情區頂部） */
+.detail-issuer-url {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+}
+
+.detail-issuer-url__link {
+  color: var(--color-accent);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.detail-issuer-url__link:hover {
+  text-decoration: underline;
 }
 
 /* 代碼下拉選單 */

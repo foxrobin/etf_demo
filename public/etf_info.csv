@@ -3,33 +3,33 @@ Last Update: 6/Feb/2026,,,,,,,
 ,,,,,,,
 Issuer (Chinese),No of ETFs (1 ETF code counts as 1 ETF),Data File,PDF,Not Provided,Data Source,Code List,Issuer Code
 DWS Investment S.A.,6,TRUE,TRUE,,https://etf.dws.com/zh-hk/product-finder/,,xtrackers
-Invesco Capital Management LLC,3,,,,,,
-SPDR金ETF,3,,,,,,
+Invesco Capital Management LLC,3,,TRUE,,https://www.invesco.com/hk/en/etfs/invesco-qqq.html,,invesco
+SPDR金ETF,3,,TRUE,,https://www.spdrgoldshares.com/hong-kong/,,spdrgold
 三星資產運用（香港）有限公司,11,,TRUE,,https://www.samsungetfhk.com/,3135,samsung
-小飛資產管理有限公司,4,,,,,,
-山證國際資產管理有限公司,2,,,,,,
-工銀瑞信資產管理（國際）有限公司,3,,,,,,
-中國平安資產管理（香港）有限公司,6,,,,,,
-中國國際金融香港資產管理有限公司,3,,,,,,
-中銀國際英國保誠資產管理有限公司,6,,,,,,
+小飛資產管理有限公司,4,,TRUE,,https://www.microbit.ai/zh-hant/,,microbit
+山證國際資產管理有限公司,2,,TRUE,,https://am.ssif.com.hk/zh-hant/products/overview/,,ssif
+工銀瑞信資產管理（國際）有限公司,3,TRUE,,,https://www.icbcubs.com.hk/,,icbcubs
+中國平安資產管理（香港）有限公司,6,,TRUE,,https://asset.pingan.com.hk/zh-hk/Products-and-Services,,pingan
+中國國際金融香港資產管理有限公司,3,TRUE,,,https://cicchkam.com/tc,,cicchkam
+中銀國際英國保誠資產管理有限公司,6,TRUE,TRUE,,https://www.boci-pru.com.hk/zh-hk,,boci-pru
 未來資產環球投資（香港）有限公司,62,TRUE,,,https://www.globalxetfs.com.hk/zh-hant/fundlist/,3416,globalx
 貝萊德資產管理北亞有限公司,24,TRUE,,,https://www.blackrock.com/hk/zh/products/etf-investments,2801,ishares
-招商證券資產管理（香港）有限公司,1,,,,,,
+招商證券資產管理（香港）有限公司,1,,TRUE,,https://www.cmschina.com.hk/AM/Profile,,cmschina
 易方達資產管理（香港）有限公司,17,,TRUE,,https://www.efunds.com.hk/tc/products/,3111,efunds
-東方匯理資產管理香港有限公司,4,,,,,,
+東方匯理資產管理香港有限公司,4,TRUE,,,https://www.amundietf.com.hk/zh/individual/etf-products/search,,amundietf
 南方東英資產管理有限公司,63,,,TRUE,https://www.csopasset.com/tc/products/etf,82822,csop
 恒生投資管理有限公司,22,,TRUE,,https://www.hangsenginvestment.com/,3136,hangseng
-泰康資產管理（香港）有限公司,3,,,,,,
-盛寶資產管理香港有限公司,3,,,,,,
-都會金融香港有限公司,3,,,,,,
+泰康資產管理（香港）有限公司,3,TRUE,,,https://hk.taikangasset.cn/hk/,,taikang
+盛寶資產管理香港有限公司,3,,,,https://www.home.saxo/zh-hk,,
+都會金融香港有限公司,3,TRUE,,,https://www.doofinancial.hk/tc,,doofinancial
 博時基金（國際）有限公司,22,TRUE,,,https://www.bosera.com.hk/,3196,bosera
-富邦基金管理（香港）有限公司,5,,,,,,
-惠理基金管理香港有限公司,5,,,,,,
+富邦基金管理（香港）有限公司,5,,TRUE,,https://www.fubonfund.com.hk/,,fubonfund
+惠理基金管理香港有限公司,5,,TRUE,,https://www.valueetf.com.hk/trad/money-market-series/,,valueetf
 華夏基金（香港）有限公司,47,TRUE,,,https://www.chinaamc.com.hk/,3461,chinaamc
-匯豐投資基金（香港）有限公司,1,,,,,,
-奧明資產管理香港有限公司,2,,,,,,
-道富環球投資管理新加坡有限公司,1,,,,,,
-嘉實國際資產管理有限公司,8,,,,,,
+匯豐投資基金（香港）有限公司,1,TRUE,,,https://www.assetmanagement.hsbc.com.hk/en/individual-investor/fund-centre/hk2819031405,,hsbc
+奧明資產管理香港有限公司,2,,TRUE,,https://hk.amova-am.com/institutional,,amova
+道富環球投資管理新加坡有限公司,1,,TRUE,,https://www.ssga.com/hk/zh_hk/individual,,ssga
+嘉實國際資產管理有限公司,8,,,TRUE,https://www.harvestglobal.com.hk/,,harvestglobal
 睿亞資產管理有限公司,29,TRUE,,,https://www.premia-partners.com/,2803,premia
-潘渡有限公司,4,,,,,,
-輝立資本管理（香港）有限公司,1,,,,,,
+潘渡有限公司,4,,TRUE,,https://www.pandofinance.com.hk/hk/,,pando
+輝立資本管理（香港）有限公司,1,TRUE,,,https://www.phillipfunds.com.hk/zh/,,phillipfunds

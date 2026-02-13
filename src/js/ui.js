@@ -50,6 +50,7 @@ function renderIssuerList(filter = '') {
       <div class="issuer-card__meta">
         <span>ETF 數量: ${escapeHtml(item.noOfEtfs)}</span>
         ${item.codes.length ? `<span>代碼列表: ${item.codes.length} 個</span>` : ''}
+        ${item.url ? `<a href="${escapeHtml(item.url)}" class="issuer-card__url" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">官網</a>` : ''}
       </div>
     </div>
   `
@@ -229,7 +230,14 @@ function renderDetail() {
   }
 
   const codes = selectedIssuer ? selectedIssuer.codes : (selectedCode ? [selectedCode] : []);
-  if (titleEl) titleEl.textContent = selectedIssuer ? selectedIssuer.issuer : `代碼 ${selectedCode}`;
+  if (titleEl) {
+    titleEl.textContent = selectedIssuer ? selectedIssuer.issuer : `代碼 ${selectedCode}`;
+  }
+
+  let issuerUrlHtml = '';
+  if (selectedIssuer?.url) {
+    issuerUrlHtml = `<p class="detail-issuer-url"><a href="${escapeHtml(selectedIssuer.url)}" target="_blank" rel="noopener noreferrer" class="detail-issuer-url__link">官網：${escapeHtml(selectedIssuer.url)}</a></p>`;
+  }
 
   const constituents = selectedCode ? getConstituents(selectedCode) : null;
 
@@ -289,6 +297,7 @@ function renderDetail() {
 
   contentEl.innerHTML = `
     <div class="detail-inner">
+      ${issuerUrlHtml}
       ${codeSelectHtml}
       ${apiBlock}
       ${constituentTable}

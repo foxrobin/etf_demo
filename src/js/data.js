@@ -59,16 +59,17 @@ export function parseEtfInfo(csvText) {
 }
 
 /**
- * 依 Issuer Code 從 code_list.json 填入各發行商的 codes
+ * 依 Issuer Code 從 code_list.json 填入各發行商的 codes 與 url
  * @param {object[]} issuers - parseEtfInfo 回傳的陣列（會就地修改）
- * @param {Record<string, { codeList: string[] }>} codeListData - code_list.json
+ * @param {Record<string, { codeList: string[], url?: string }>} codeListData - code_list.json
  */
 export function applyCodeList(issuers, codeListData) {
   if (!codeListData || typeof codeListData !== 'object') return;
   for (const item of issuers) {
-    if (item.issuerCode && codeListData[item.issuerCode]?.codeList) {
-      item.codes = codeListData[item.issuerCode].codeList;
-    }
+    if (!item.issuerCode) continue;
+    const entry = codeListData[item.issuerCode];
+    if (entry?.codeList) item.codes = entry.codeList;
+    if (entry?.url) item.url = entry.url;
   }
 }
 
