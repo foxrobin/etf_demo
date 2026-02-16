@@ -129,7 +129,7 @@ async function loadConstituentsForCode(code) {
     } catch (_) {}
   }
   const fallback = getConstituents(code) || null;
-  if (fallback !== null) constituentsCache[code] = fallback;
+  constituentsCache[code] = fallback;
   return fallback;
 }
 
