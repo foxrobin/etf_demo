@@ -2,9 +2,10 @@
  * UI：發行商列表、詳情區、下拉選單、API 狀態與事件綁定
  */
 
-import { ID, HOLDINGS_CSV_BASE } from './config.js';
+import { ID, HOLDINGS_BY_ISSUER, HOLDINGS_MANIFEST_URL } from './config.js';
 import { fetchEtfByCode, setStatus, getStatus, getCachedDetail } from './api.js';
 import { parseEtfInfo, applyCodeList, getConstituents, parseHoldingsCsv, getHoldingsCandidateCodes } from './data.js';
+import { parseHoldingsXls } from './holdings-xls.js';
 import { escapeHtml } from './utils.js';
 import { LOGICAL_FIELDS, VALUE_CD_LABELS, LANG_TABS } from './etf-fields.js';
 
@@ -27,8 +28,10 @@ let selectedCode = null;
 const constituentsCache = {};
 /** 正在載入持股的 code，用於顯示 loading 且不重複觸發 */
 let constituentsLoadingCode = null;
-/** 代碼 → 持股 CSV 檔名，由 holdings_manifest.json 載入 */
-let holdingsManifest = null;
+/** 各 issuer 的 manifest（code → 檔名），由單一 holdings_manifest.json 載入後分發 */
+const holdingsManifestByIssuer = {};
+/** 是否已載入合併 manifest（只 fetch 一次） */
+let holdingsManifestLoaded = false;
 
 // ---------------------------------------------------------------------------
 // 發行商列表
@@ -89,45 +92,81 @@ function selectCode(code) {
   }
 }
 
-async function loadHoldingsManifest() {
-  if (holdingsManifest !== null) return holdingsManifest;
-  try {
-    const res = await fetch('/holdings_manifest.json');
-    if (res.ok) {
-      const data = await res.json();
-      if (data && typeof data === 'object') holdingsManifest = data;
-    }
-  } catch (_) {}
-  return holdingsManifest;
-}
-
-/**
- * 載入指定代碼的成分。僅當 holdings_manifest 有該 code（或候選 code）時才請求，用 manifest 的檔名一次 fetch，簡單迅速。
- * @param {string} code
- * @returns {Promise<{ headers: string[], rows: string[][] } | Array<{ name: string, percent: number }> | null>}
- */
-async function loadConstituentsForCode(code) {
-  code = code ? String(code).trim() : '';
-  if (!code) return null;
-  if (constituentsCache[code] !== undefined) return constituentsCache[code];
-  await loadHoldingsManifest();
-  const candidates = getHoldingsCandidateCodes(code);
-  const base = HOLDINGS_CSV_BASE.replace(/\/?$/, '/');
-  for (const tryCode of candidates) {
-    const filename = holdingsManifest && holdingsManifest[tryCode];
-    if (!filename) continue;
-    const csvUrl = base + filename;
+async function loadHoldingsManifest(issuerCode) {
+  if (holdingsManifestByIssuer[issuerCode] !== undefined) return holdingsManifestByIssuer[issuerCode];
+  if (!holdingsManifestLoaded) {
     try {
-      const res = await fetch(csvUrl);
-      if (!res.ok) continue;
-      const text = await res.text();
-      const { headers, rows } = parseHoldingsCsv(text);
-      if (headers.length && rows.length) {
-        constituentsCache[code] = { headers, rows };
-        return constituentsCache[code];
+      const res = await fetch(HOLDINGS_MANIFEST_URL);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && typeof data === 'object') {
+          for (const k of Object.keys(data)) holdingsManifestByIssuer[k] = data[k];
+          holdingsManifestLoaded = true;
+        }
       }
     } catch (_) {}
   }
+  return holdingsManifestByIssuer[issuerCode] ?? null;
+}
+
+/**
+ * 依發行商載入持股：globalx 用 CSV + manifest，ishares 用 XLS + manifest，同一 UI 顯示。
+ * @param {string} code
+ * @param {string} [issuerCode] 來自 selectedIssuer.issuerCode
+ * @returns {Promise<{ headers: string[], rows: string[][] } | Array<{ name: string, percent: number }> | null>}
+ */
+async function loadConstituentsForCode(code, issuerCode) {
+  code = code ? String(code).trim() : '';
+  if (!code) return null;
+  if (constituentsCache[code] !== undefined) return constituentsCache[code];
+  const config = issuerCode ? HOLDINGS_BY_ISSUER[issuerCode] : null;
+  if (!config) {
+    const fallback = getConstituents(code) || null;
+    constituentsCache[code] = fallback;
+    return fallback;
+  }
+  await loadHoldingsManifest(issuerCode);
+  const manifest = holdingsManifestByIssuer[issuerCode];
+  const base = (config.base || '').replace(/\/?$/, '/');
+
+  if (config.type === 'csv') {
+    const candidates = getHoldingsCandidateCodes(code);
+    for (const tryCode of candidates) {
+      const filename = manifest && manifest[tryCode];
+      if (!filename) continue;
+      try {
+        const res = await fetch(base + filename);
+        if (!res.ok) continue;
+        const text = await res.text();
+        const { headers, rows } = parseHoldingsCsv(text);
+        if (headers.length && rows.length) {
+          constituentsCache[code] = { headers, rows };
+          return constituentsCache[code];
+        }
+      } catch (_) {}
+    }
+  } else if (config.type === 'xls') {
+    const filename = manifest && (manifest[code] || manifest[String(code)]);
+    if (filename) {
+      try {
+        const res = await fetch(base + filename);
+        const contentType = (res.headers.get('Content-Type') || '').toLowerCase();
+        if (res.ok && contentType.includes('text/html')) { /* 略過 SPA fallback */ }
+        else if (res.ok) {
+          const ab = await res.arrayBuffer();
+          const peek = new TextDecoder().decode(ab.slice(0, 512));
+          if (!/<\s*!?html|<\s*head|<\s*meta\s/i.test(peek)) {
+            const { headers, rows } = parseHoldingsXls(ab);
+            if (headers.length || rows.length) {
+              constituentsCache[code] = { headers, rows };
+              return constituentsCache[code];
+            }
+          }
+        }
+      } catch (_) {}
+    }
+  }
+
   const fallback = getConstituents(code) || null;
   constituentsCache[code] = fallback;
   return fallback;
@@ -293,7 +332,7 @@ async function renderDetail() {
   const needLoadConstituents = selectedCode && constituents === undefined;
   if (needLoadConstituents && constituentsLoadingCode !== selectedCode) {
     constituentsLoadingCode = selectedCode;
-    loadConstituentsForCode(selectedCode).then(() => {
+    loadConstituentsForCode(selectedCode, selectedIssuer?.issuerCode).then(() => {
       constituentsLoadingCode = null;
       renderDetail();
     });

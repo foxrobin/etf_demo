@@ -1,6 +1,6 @@
 /**
- * 掃描 public/csv_docs/globalx 下所有 *_full_holdings_*.csv，
- * 依檔名抽出 code，自動產生 public/holdings_manifest.json。
+ * 掃描 public/csv_docs/globalx 與 public/csv_docs/ishares，
+ * 產生單一 public/holdings_manifest.json：{ globalx: { code: filename }, ishares: { code: filename } }。
  * 執行: node scripts/generate-holdings-manifest.js
  * 或: npm run generate:holdings
  */
@@ -11,33 +11,38 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
-const csvDir = path.join(root, 'public', 'csv_docs', 'globalx');
 const manifestPath = path.join(root, 'public', 'holdings_manifest.json');
 
-if (!fs.existsSync(csvDir)) {
-  console.warn('目錄不存在:', csvDir);
-  fs.writeFileSync(manifestPath, '{}\n', 'utf8');
-  console.log('已寫入空 manifest:', manifestPath);
-  process.exit(0);
+function scanDir(dir, pattern, key) {
+  const out = {};
+  if (!fs.existsSync(dir)) return out;
+  for (const file of fs.readdirSync(dir)) {
+    const match = file.match(pattern);
+    if (!match) continue;
+    out[match[1]] = file;
+  }
+  return Object.keys(out)
+    .sort((a, b) => String(a).localeCompare(b, undefined, { numeric: true }))
+    .reduce((acc, code) => {
+      acc[code] = out[code];
+      return acc;
+    }, {});
 }
 
-const files = fs.readdirSync(csvDir);
-const manifest = {};
+const globalxDir = path.join(root, 'public', 'csv_docs', 'globalx');
+const isharesDir = path.join(root, 'public', 'csv_docs', 'ishares');
 
-for (const file of files) {
-  if (!file.endsWith('.csv')) continue;
-  const match = file.match(/^(\d+)_full_holdings_[^.]+\.csv$/);
-  if (!match) continue;
-  const code = match[1];
-  manifest[code] = file;
-}
+const globalx = scanDir(globalxDir, /^(\d+)_full_holdings_[^.]+\.csv$/, 'code');
+const ishares = scanDir(isharesDir, /^(\d+)_ishares\.(xls|xlsx)$/i, 'code');
 
-const sorted = Object.keys(manifest)
-  .sort((a, b) => String(a).localeCompare(b, undefined, { numeric: true }))
-  .reduce((acc, code) => {
-    acc[code] = manifest[code];
-    return acc;
-  }, {});
-
-fs.writeFileSync(manifestPath, JSON.stringify(sorted, null, 2) + '\n', 'utf8');
-console.log('已從', csvDir, '產生', manifestPath, '，共', Object.keys(sorted).length, '筆');
+const merged = { globalx, ishares };
+fs.writeFileSync(manifestPath, JSON.stringify(merged, null, 2) + '\n', 'utf8');
+console.log(
+  '已產生',
+  manifestPath,
+  '｜ globalx:',
+  Object.keys(globalx).length,
+  '筆，ishares:',
+  Object.keys(ishares).length,
+  '筆'
+);

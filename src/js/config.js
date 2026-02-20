@@ -5,8 +5,14 @@
 /** EtfInfo.do API 預設網址（開發時經 Vite proxy 避開 CORS） */
 export const API_URL_DEFAULT = '/InfoPool-ASA/EtfInfo.do';
 
-/** 持股 CSV 根路徑（檔名由 manifest 或 {code}_full_holdings.csv 決定） */
-export const HOLDINGS_CSV_BASE = '/csv_docs/globalx/';
+/** 持股 manifest 單一檔案：{ globalx: { code: filename }, ishares: { code: filename } } */
+export const HOLDINGS_MANIFEST_URL = '/holdings_manifest.json';
+
+/** 各發行商持股檔案設定：base 路徑、類型（csv|xls），未來可擴充其他 issuer */
+export const HOLDINGS_BY_ISSUER = {
+  globalx: { base: '/csv_docs/globalx/', type: 'csv' },
+  ishares: { base: '/csv_docs/ishares/', type: 'xls' },
+};
 
 /** 頁面元素 ID */
 export const ID = {
