@@ -147,13 +147,15 @@ async function loadConstituentsForCode(code, issuerCode) {
       } catch (_) {}
     }
   } else if (config.type === 'xls') {
-    const filename = manifest && (manifest[code] || manifest[String(code)]);
-    if (filename) {
+    const tryCodes = config.useCandidateCodes ? getHoldingsCandidateCodes(code) : [code, String(code)];
+    for (const tryCode of tryCodes) {
+      const filename = manifest && (manifest[tryCode] || manifest[String(tryCode)]);
+      if (!filename) continue;
       try {
         const res = await fetch(base + filename);
         const contentType = (res.headers.get('Content-Type') || '').toLowerCase();
-        if (res.ok && contentType.includes('text/html')) { /* 略過 SPA fallback */ }
-        else if (res.ok) {
+        if (res.ok && contentType.includes('text/html')) continue; /* 略過 SPA fallback */
+        if (res.ok) {
           const ab = await res.arrayBuffer();
           const peek = new TextDecoder().decode(ab.slice(0, 512));
           if (!/<\s*!?html|<\s*head|<\s*meta\s/i.test(peek)) {
