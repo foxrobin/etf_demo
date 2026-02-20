@@ -110,7 +110,8 @@ async function loadHoldingsManifest(issuerCode) {
 }
 
 /**
- * 依發行商載入持股：globalx 用 CSV + manifest，ishares 用 XLS + manifest，同一 UI 顯示。
+ * 依發行商載入持股：globalx 用 CSV、ishares 用 XLS、bosera 用 XLSX，皆用 manifest，同一 UI 顯示。
+ * globalx / bosera 用 getHoldingsCandidateCodes（3字、2字、9字、8xxx）對應檔名。
  * @param {string} code
  * @param {string} [issuerCode] 來自 selectedIssuer.issuerCode
  * @returns {Promise<{ headers: string[], rows: string[][] } | Array<{ name: string, percent: number }> | null>}
@@ -162,6 +163,22 @@ async function loadConstituentsForCode(code, issuerCode) {
               return constituentsCache[code];
             }
           }
+        }
+      } catch (_) {}
+    }
+  } else if (config.type === 'xlsx') {
+    const candidates = getHoldingsCandidateCodes(code);
+    for (const tryCode of candidates) {
+      const filename = manifest && manifest[tryCode];
+      if (!filename) continue;
+      try {
+        const res = await fetch(base + filename);
+        if (!res.ok) continue;
+        const ab = await res.arrayBuffer();
+        const { headers, rows } = parseHoldingsXls(ab);
+        if (headers.length || rows.length) {
+          constituentsCache[code] = { headers, rows };
+          return constituentsCache[code];
         }
       } catch (_) {}
     }
