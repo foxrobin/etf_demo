@@ -184,6 +184,34 @@ async function loadConstituentsForCode(code, issuerCode) {
         }
       } catch (_) {}
     }
+  } else if (config.type === 'mixed') {
+    const candidates = getHoldingsCandidateCodes(code);
+    for (const tryCode of candidates) {
+      const filename = manifest && (manifest[tryCode] || manifest[String(tryCode)]);
+      if (!filename) continue;
+      try {
+        const res = await fetch(base + filename);
+        if (!res.ok) continue;
+        if (filename.toLowerCase().endsWith('.csv')) {
+          const text = await res.text();
+          const { headers, rows } = parseHoldingsCsv(text);
+          if (headers.length && rows.length) {
+            constituentsCache[code] = { headers, rows };
+            return constituentsCache[code];
+          }
+        } else {
+          const ab = await res.arrayBuffer();
+          const peek = new TextDecoder().decode(ab.slice(0, 512));
+          if (!/<\s*!?html|<\s*head|<\s*meta\s/i.test(peek)) {
+            const { headers, rows } = parseHoldingsXls(ab);
+            if (headers.length || rows.length) {
+              constituentsCache[code] = { headers, rows };
+              return constituentsCache[code];
+            }
+          }
+        }
+      } catch (_) {}
+    }
   }
 
   const fallback = getConstituents(code) || null;

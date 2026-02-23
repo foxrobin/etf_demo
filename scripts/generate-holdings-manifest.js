@@ -1,5 +1,5 @@
 /**
- * 掃描 public/csv_docs/globalx、ishares、bosera、csop，
+ * 掃描 public/csv_docs/globalx、ishares、bosera、csop、chinaamc、premia、efunds、hangseng，
  * 產生單一 public/holdings_manifest.json：各 issuer 為 { code: filename }（只含有檔的 code）。
  * 執行: node scripts/generate-holdings-manifest.js
  * 或: npm run generate:holdings
@@ -33,13 +33,21 @@ const globalxDir = path.join(root, 'public', 'csv_docs', 'globalx');
 const isharesDir = path.join(root, 'public', 'csv_docs', 'ishares');
 const boseraDir = path.join(root, 'public', 'csv_docs', 'bosera');
 const csopDir = path.join(root, 'public', 'csv_docs', 'csop');
+const chinaamcDir = path.join(root, 'public', 'csv_docs', 'chinaamc');
+const premiaDir = path.join(root, 'public', 'csv_docs', 'premia');
+const efundsDir = path.join(root, 'public', 'csv_docs', 'efunds');
+const hangsengDir = path.join(root, 'public', 'csv_docs', 'hangseng');
 
 const globalx = scanDir(globalxDir, /^(\d+)_full_holdings_[^.]+\.csv$/, 'code');
 const ishares = scanDir(isharesDir, /^(\d+)_ishares\.(xls|xlsx)$/i, 'code');
 const bosera = scanDir(boseraDir, /^(\d+)_bosera\.xlsx$/i, 'code');
 const csop = scanDir(csopDir, /^(\d+)_csop\.(xls|xlsx)$/i, 'code');
+const chinaamc = scanDir(chinaamcDir, /^(\d+)_chinaamc\.(xls|xlsx)$/i, 'code');
+const premia = scanDir(premiaDir, /^(\d+)_premia\.(xls|xlsx)$/i, 'code');
+const efunds = scanDir(efundsDir, /^(\d+)_efunds\.(xls|xlsx)$/i, 'code');
+const hangseng = scanDir(hangsengDir, /^(\d+)_hangseng\.(csv|xls|xlsx)$/i, 'code');
 
-const merged = { globalx, ishares, bosera, csop };
+const merged = { globalx, ishares, bosera, csop, chinaamc, premia, efunds, hangseng };
 fs.writeFileSync(manifestPath, JSON.stringify(merged, null, 2) + '\n', 'utf8');
 console.log(
   '已產生',
@@ -52,5 +60,13 @@ console.log(
   Object.keys(bosera).length,
   '筆，csop:',
   Object.keys(csop).length,
+  '筆，chinaamc:',
+  Object.keys(chinaamc).length,
+  '筆，premia:',
+  Object.keys(premia).length,
+  '筆，efunds:',
+  Object.keys(efunds).length,
+  '筆，hangseng:',
+  Object.keys(hangseng).length,
   '筆'
 );
