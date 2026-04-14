@@ -1,11 +1,11 @@
-"""Route provider name to scraper + cleaner pipeline."""
-
 from __future__ import annotations
 
 import json
 import os
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional
+
+from cleaners.model.page_result import PageResult
 
 from cleaners.boci_cleaner import build_boci_bundle
 from cleaners.bosera_cleaner import build_bosera_bundle
@@ -25,7 +25,7 @@ class ProviderConfig:
     default_urls: List[str]
     env_urls_key: str
     scraper_factory: Callable[[], Any]
-    cleaner: Callable[[List[Any]], Dict[str, Any]]
+    cleaner: Callable[[List[PageResult]], Dict[str, Any]]
 
 
 PROVIDERS: Dict[str, ProviderConfig] = {
@@ -150,4 +150,5 @@ def parse_urls_for_provider(
         return [u.strip() for u in env_urls.split(",") if u.strip()]
 
     return list(cfg.default_urls)
+
 

@@ -1,15 +1,9 @@
-"""
-Turn raw table rows (header + data) into structured dicts and a bundle document.
-
-Designed so later steps (S3 upload, SNS, CMS, API) can consume one JSON payload.
-"""
-
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
-from scrapers.globalx_scraper import GlobalXPageResult
+from cleaners.model.page_result import PageResult
 
 
 def rows_to_holdings_objects(rows: List[List[str]]) -> List[Dict[str, str]]:
@@ -36,16 +30,14 @@ def rows_to_holdings_objects(rows: List[List[str]]) -> List[Dict[str, str]]:
     return out
 
 
-def build_globalx_bundle(
-    results: List[GlobalXPageResult],
+def build_bundle_from_page_results(
+    results: List[PageResult],
     *,
+    provider_key: str,
     schema_version: int = 1,
 ) -> Dict[str, Any]:
     """
-    Single JSON-serializable document for all funds in this run.
-
-    - `funds`: successful parses with `holdings` as list of row objects
-    - `errors`: failed URLs with messages (for monitoring / retries)
+    Shared bundle shape for any provider, given a list of PageResult.
     """
     generated_at = datetime.now(timezone.utc).isoformat()
     funds: List[Dict[str, Any]] = []
@@ -58,7 +50,7 @@ def build_globalx_bundle(
         funds.append(
             {
                 "url": r.url,
-                "symbol": r.symbol,
+                "etfCode": r.etf_code,
                 "as_of_date": r.as_of_date,
                 "row_count": len(r.rows) - 1 if r.rows else 0,
                 "holdings": rows_to_holdings_objects(r.rows),
@@ -67,8 +59,15 @@ def build_globalx_bundle(
 
     return {
         "schema_version": schema_version,
-        "provider": "globalx_hk",
+        "provider": provider_key,
         "generated_at": generated_at,
         "funds": funds,
         "errors": errors,
     }
+
+
+def build_globalx_bundle(results: List[PageResult], *, schema_version: int = 1) -> Dict[str, Any]:
+    return build_bundle_from_page_results(
+        results, provider_key="globalx_hk", schema_version=schema_version
+    )
+

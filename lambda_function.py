@@ -1,5 +1,3 @@
-"""AWS Lambda unified entry for provider-specific holdings scrapers."""
-
 from __future__ import annotations
 
 import json

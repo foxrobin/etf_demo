@@ -1,22 +1,13 @@
-"""iShares cleaner placeholder.
-
-Implement provider-specific normalization into API-ready JSON structure.
-"""
-
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Any, Dict, List
 
+from cleaners.holdings_cleaner import build_bundle_from_page_results
+from cleaners.model.page_result import PageResult
 
-def build_ishares_bundle(results: List[Any], *, schema_version: int = 1) -> Dict[str, Any]:
-    return {
-        "schema_version": schema_version,
-        "provider": "ishares",
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "funds": [],
-        "errors": [
-            {"url": getattr(r, "url", ""), "error": getattr(r, "error", "Not implemented yet")}
-            for r in results
-        ],
-    }
+
+def build_ishares_bundle(results: List[PageResult], *, schema_version: int = 1) -> Dict[str, Any]:
+    return build_bundle_from_page_results(
+        results, provider_key="ishares", schema_version=schema_version
+    )
+

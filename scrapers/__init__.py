@@ -1,20 +1,16 @@
-﻿"""Site-specific scrapers. Each module targets one provider or page family."""
-
-from .globalx_scraper import GlobalXPageResult, GlobalXScraper
-from .ishares_scraper import ISharesPageResult, ISharesScraper
-from .boci_scraper import BOCIPageResult, BOCIScraper
-from .pingan_scraper import PingAnPageResult, PingAnScraper
-from .bosera_scraper import BoseraPageResult, BoseraScraper
+from .boci_scraper import BOCIScraper
+from .bosera_scraper import BoseraScraper
+from .globalx_scraper import GlobalXScraper
+from .ishares_scraper import ISharesScraper
+from cleaners.model.page_result import PageResult
+from .pingan_scraper import PingAnScraper
 
 __all__ = [
+    "PageResult",
     "GlobalXScraper",
-    "GlobalXPageResult",
     "ISharesScraper",
-    "ISharesPageResult",
     "BOCIScraper",
-    "BOCIPageResult",
     "PingAnScraper",
-    "PingAnPageResult",
     "BoseraScraper",
-    "BoseraPageResult",
 ]
+
