@@ -1,2 +1,7 @@
 # public 目錄僅在本地使用，不提交到 git
 /public/
+
+# Python bytecode (auto-generated when you run Python; not source code)
+__pycache__/
+*.py[cod]
+*$py.class

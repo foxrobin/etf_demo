@@ -1,0 +1,3 @@
+# One Global X fund page URL per line
+https://www.globalxetfs.com.hk/zh-hant/funds/hscei-covered-call-etf/
+https://www.globalxetfs.com.hk/zh-hant/funds/hang-seng-tech-covered-call-active-etf/
