@@ -4,6 +4,7 @@ import json
 from datetime import datetime, timezone
 from typing import Any, Dict
 
+from cleaners.holdings_cleaner import build_bundle_from_page_results
 from provider_router import PROVIDERS, parse_providers, parse_urls_for_provider
 
 
@@ -41,7 +42,7 @@ def lambda_handler(event: Any, context: Any) -> Dict[str, Any]:
         urls = parse_urls_for_provider(ev, provider, cfg, requested)
         scraper = cfg.scraper_factory()
         results = scraper.scrape_urls(urls)
-        bundle = cfg.cleaner(results)
+        bundle = build_bundle_from_page_results(results, provider_key=cfg.bundle_provider_key)
         bundles[provider] = bundle
         summary[provider] = {
             "funds": len(bundle.get("funds", [])),

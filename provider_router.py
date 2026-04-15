@@ -5,13 +5,6 @@ import os
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional
 
-from cleaners.model.page_result import PageResult
-
-from cleaners.boci_cleaner import build_boci_bundle
-from cleaners.bosera_cleaner import build_bosera_bundle
-from cleaners.holdings_cleaner import build_globalx_bundle
-from cleaners.ishares_cleaner import build_ishares_bundle
-from cleaners.pingan_cleaner import build_pingan_bundle
 from scrapers.boci_scraper import BOCIScraper
 from scrapers.bosera_scraper import BoseraScraper
 from scrapers.globalx_scraper import GlobalXScraper
@@ -25,7 +18,8 @@ class ProviderConfig:
     default_urls: List[str]
     env_urls_key: str
     scraper_factory: Callable[[], Any]
-    cleaner: Callable[[List[PageResult]], Dict[str, Any]]
+    # JSON bundle "provider" string; only globalx differs from router key (globalx_hk).
+    bundle_provider_key: str
 
 
 PROVIDERS: Dict[str, ProviderConfig] = {
@@ -37,35 +31,35 @@ PROVIDERS: Dict[str, ProviderConfig] = {
         ],
         env_urls_key="GLOBALX_FUND_URLS",
         scraper_factory=GlobalXScraper,
-        cleaner=build_globalx_bundle,
+        bundle_provider_key="globalx_hk",
     ),
     "ishares": ProviderConfig(
         name="ishares",
         default_urls=[],
         env_urls_key="ISHARES_FUND_URLS",
         scraper_factory=ISharesScraper,
-        cleaner=build_ishares_bundle,
+        bundle_provider_key="ishares",
     ),
     "boci": ProviderConfig(
         name="boci",
         default_urls=[],
         env_urls_key="BOCI_FUND_URLS",
         scraper_factory=BOCIScraper,
-        cleaner=build_boci_bundle,
+        bundle_provider_key="boci",
     ),
     "pingan": ProviderConfig(
         name="pingan",
         default_urls=[],
         env_urls_key="PINGAN_FUND_URLS",
         scraper_factory=PingAnScraper,
-        cleaner=build_pingan_bundle,
+        bundle_provider_key="pingan",
     ),
     "bosera": ProviderConfig(
         name="bosera",
         default_urls=[],
         env_urls_key="BOSERA_FUND_URLS",
         scraper_factory=BoseraScraper,
-        cleaner=build_bosera_bundle,
+        bundle_provider_key="bosera",
     ),
 }
 

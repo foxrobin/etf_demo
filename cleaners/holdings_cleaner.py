@@ -65,9 +65,3 @@ def build_bundle_from_page_results(
         "errors": errors,
     }
 
-
-def build_globalx_bundle(results: List[PageResult], *, schema_version: int = 1) -> Dict[str, Any]:
-    return build_bundle_from_page_results(
-        results, provider_key="globalx_hk", schema_version=schema_version
-    )
-
