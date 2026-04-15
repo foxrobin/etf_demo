@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-from cleaners.model.page_result import PageResult
+from model.page_result import PageResult
 
 
 def rows_to_holdings_objects(rows: List[List[str]]) -> List[Dict[str, str]]:

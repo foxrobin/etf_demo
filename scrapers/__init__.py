@@ -2,7 +2,7 @@ from .boci_scraper import BOCIScraper
 from .bosera_scraper import BoseraScraper
 from .globalx_scraper import GlobalXScraper
 from .ishares_scraper import ISharesScraper
-from cleaners.model.page_result import PageResult
+from model.page_result import PageResult
 from .pingan_scraper import PingAnScraper
 
 __all__ = [

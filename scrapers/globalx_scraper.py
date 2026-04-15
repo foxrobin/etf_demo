@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
 
-from cleaners.model.page_result import PageResult
+from model.page_result import PageResult
 
 
 def _clean_text(text: str) -> str:

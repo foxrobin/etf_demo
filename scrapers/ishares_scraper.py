@@ -18,7 +18,7 @@ from urllib.parse import parse_qs, urlparse
 
 import requests
 
-from cleaners.model.page_result import PageResult
+from model.page_result import PageResult
 
 # Reasonable default; some CDNs expect a browser-like User-Agent.
 _DEFAULT_HEADERS = {

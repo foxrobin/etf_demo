@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Sequence
 
-from cleaners.model.page_result import PageResult
+from model.page_result import PageResult
 
 
 class BOCIScraper:
