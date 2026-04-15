@@ -4,8 +4,6 @@ iShares (BlackRock HK): download holdings CSV from direct .ajax URLs.
 Example:
   https://www.blackrock.com/hk/zh/products/.../1478358625333.ajax?fileType=csv&fileName=2801_holdings&dataType=fund
 
-Terms of use: BlackRock's site may restrict automated access; use responsibly and
-comply with their terms. This code is for integration with your own workflows.
 """
 
 from __future__ import annotations
