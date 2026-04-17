@@ -7,6 +7,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from scrapers.boci_scraper import BOCIScraper
 from scrapers.bosera_scraper import BoseraScraper
+from scrapers.csop_scraper import CsopScraper
 from scrapers.globalx_scraper import GlobalXScraper
 from scrapers.ishares_scraper import ISharesScraper
 from scrapers.pingan_scraper import PingAnScraper
@@ -60,6 +61,13 @@ PROVIDERS: Dict[str, ProviderConfig] = {
         env_urls_key="BOSERA_FUND_URLS",
         scraper_factory=BoseraScraper,
         bundle_provider_key="bosera",
+    ),
+    "csop": ProviderConfig(
+        name="csop",
+        default_urls=[],
+        env_urls_key="CSOP_FUND_URLS",
+        scraper_factory=CsopScraper,
+        bundle_provider_key="csop",
     ),
 }
 
