@@ -12,9 +12,8 @@ def lambda_handler(event: Any, context: Any) -> Dict[str, Any]:
     """
     event (dict):
       - providers: ["globalx","ishares", ...] (multi-provider)
-      - urls: ["https://...", ...] (only when providers has one item)
-      - provider_urls: {"globalx":[...], "ishares":[...]} (multi-provider use)
-      - body: '{"providers":["globalx"],"urls":["..."]}' API Gateway proxy integration
+      - provider_urls: {"globalx":[...], "ishares":[...]} (URL list per provider)
+      - body: '{"providers":["globalx"],"provider_urls":{"globalx":["..."]}}'
     env:
       - DATA_PROVIDERS=globalx,ishares (optional default providers list)
       - <PROVIDER>_FUND_URLS=comma,separated,urls (optional defaults per provider)
@@ -39,7 +38,7 @@ def lambda_handler(event: Any, context: Any) -> Dict[str, Any]:
     summary: Dict[str, Dict[str, int]] = {}
     for provider in requested:
         cfg = PROVIDERS[provider]
-        urls = parse_urls_for_provider(ev, provider, cfg, requested)
+        urls = parse_urls_for_provider(ev, provider, cfg)
         scraper = cfg.scraper_factory()
         results = scraper.scrape_urls(urls)
         bundle = build_bundle_from_page_results(results, provider_key=cfg.bundle_provider_key)

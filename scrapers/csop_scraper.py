@@ -37,6 +37,7 @@ _DOWNLOAD_BASE_URL = "https://website-api.csopasset.com/cmsApi/Holdings/product/
 # Product slug fallback for cases where product page blocks scraping and no anchor is visible.
 _FUND_ID_BY_SLUG = {
     "china-a50-etf": "CO-A50F",
+    "hk-nik225":"HK-NIK225"
 }
 
 

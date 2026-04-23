@@ -103,31 +103,13 @@ def parse_providers(event: Optional[Dict[str, Any]]) -> List[str]:
     return ["globalx"]
 
 
-def parse_urls(event: Optional[Dict[str, Any]], cfg: ProviderConfig) -> List[str]:
-    ev = event if isinstance(event, dict) else {}
-    body = _parse_body(ev)
-
-    raw_urls = ev.get("urls")
-    if not isinstance(raw_urls, list):
-        raw_urls = body.get("urls")
-    if isinstance(raw_urls, list) and raw_urls:
-        return [str(u).strip() for u in raw_urls if str(u).strip()]
-
-    env_urls = os.environ.get(cfg.env_urls_key, "").strip()
-    if env_urls:
-        return [u.strip() for u in env_urls.split(",") if u.strip()]
-
-    return list(cfg.default_urls)
-
-
 def parse_urls_for_provider(
     event: Optional[Dict[str, Any]],
     provider: str,
     cfg: ProviderConfig,
-    selected_providers: List[str],
 ) -> List[str]:
     """
-    Same as parse_urls, plus optional per-provider map:
+    Resolve URLs from provider_urls map only:
       event.provider_urls = {"globalx": [...], "ishares": [...]}
       body.provider_urls = {...}
     """
@@ -142,10 +124,6 @@ def parse_urls_for_provider(
         per = provider_urls.get(provider)
         if isinstance(per, list) and per:
             return [str(u).strip() for u in per if str(u).strip()]
-
-    # Convenience: when only one provider is requested, allow top-level urls.
-    if len(selected_providers) == 1:
-        return parse_urls(ev, cfg)
 
     env_urls = os.environ.get(cfg.env_urls_key, "").strip()
     if env_urls:
