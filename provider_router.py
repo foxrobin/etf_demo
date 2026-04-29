@@ -11,6 +11,7 @@ from scrapers.csop_scraper import CsopScraper
 from scrapers.globalx_scraper import GlobalXScraper
 from scrapers.ishares_scraper import ISharesScraper
 from scrapers.pingan_scraper import PingAnScraper
+from scrapers.premia_scraper import PremiaScraper
 
 
 @dataclass(frozen=True)
@@ -68,6 +69,13 @@ PROVIDERS: Dict[str, ProviderConfig] = {
         env_urls_key="CSOP_FUND_URLS",
         scraper_factory=CsopScraper,
         bundle_provider_key="csop",
+    ),
+    "premia": ProviderConfig(
+        name="premia",
+        default_urls=[],
+        env_urls_key="PREMIA_FUND_URLS",
+        scraper_factory=PremiaScraper,
+        bundle_provider_key="premia",
     ),
 }
 

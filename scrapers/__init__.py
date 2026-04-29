@@ -5,6 +5,7 @@ from .globalx_scraper import GlobalXScraper
 from .ishares_scraper import ISharesScraper
 from model.page_result import PageResult
 from .pingan_scraper import PingAnScraper
+from .premia_scraper import PremiaScraper
 
 __all__ = [
     "PageResult",
@@ -14,5 +15,6 @@ __all__ = [
     "PingAnScraper",
     "BoseraScraper",
     "CsopScraper",
+    "PremiaScraper",
 ]
 
