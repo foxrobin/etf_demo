@@ -9,6 +9,7 @@ from scrapers.boci_scraper import BOCIScraper
 from scrapers.bosera_scraper import BoseraScraper
 from scrapers.csop_scraper import CsopScraper
 from scrapers.chinaamc_scraper import ChinaamcScraper
+from scrapers.efunds_scraper import EfundsScraper
 from scrapers.globalx_scraper import GlobalXScraper
 from scrapers.ishares_scraper import ISharesScraper
 from scrapers.pingan_scraper import PingAnScraper
@@ -84,6 +85,13 @@ PROVIDERS: Dict[str, ProviderConfig] = {
         env_urls_key="CHINAAMC_FUND_URLS",
         scraper_factory=ChinaamcScraper,
         bundle_provider_key="chinaamc",
+    ),
+    "efunds": ProviderConfig(
+        name="efunds",
+        default_urls=[],
+        env_urls_key="EFUNDS_FUND_URLS",
+        scraper_factory=EfundsScraper,
+        bundle_provider_key="efunds",
     ),
 }
 

@@ -2,6 +2,7 @@ from .boci_scraper import BOCIScraper
 from .bosera_scraper import BoseraScraper
 from .csop_scraper import CsopScraper
 from .chinaamc_scraper import ChinaamcScraper
+from .efunds_scraper import EfundsScraper
 from .globalx_scraper import GlobalXScraper
 from .ishares_scraper import ISharesScraper
 from model.page_result import PageResult
@@ -17,6 +18,7 @@ __all__ = [
     "BoseraScraper",
     "CsopScraper",
     "ChinaamcScraper",
+    "EfundsScraper",
     "PremiaScraper",
 ]
 
