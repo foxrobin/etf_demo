@@ -11,17 +11,6 @@ export const API_URL_DEFAULT = '/InfoPool-ASA/EtfInfo.do';
  */
 export const HOLDINGS_API_URL = (import.meta.env.VITE_HOLDINGS_API_URL ?? '/lambda').trim();
 
-/**
- * 設為 true（在 .env 設 VITE_HOLDINGS_USE_STATIC=1）時：Global X 只讀靜態檔，不呼叫 API／無需 api_server。
- * 資料請先執行 npm run snapshot:globalx 更新 public/globalx_holdings_snapshot.json。
- */
-export const HOLDINGS_USE_STATIC_ONLY = import.meta.env.VITE_HOLDINGS_USE_STATIC === '1';
-
-/** Global X 靜態持股快照（由 scripts/export_globalx_snapshot.py 產生） */
-export const HOLDINGS_STATIC_SNAPSHOT_URL = (
-  import.meta.env.VITE_HOLDINGS_STATIC_SNAPSHOT_URL ?? '/globalx_holdings_snapshot.json'
-).trim();
-
 /** Global X：代碼 → 基金頁 URL（取代昔日 csv_docs manifest） */
 export const GLOBALX_CODE_URLS_JSON = '/globalx_code_urls.json';
 

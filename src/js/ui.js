@@ -6,8 +6,6 @@ import {
   ID,
   GLOBALX_CODE_URLS_JSON,
   HOLDINGS_API_URL,
-  HOLDINGS_STATIC_SNAPSHOT_URL,
-  HOLDINGS_USE_STATIC_ONLY,
 } from './config.js';
 import { fetchEtfByCode, fetchHoldingsForUrls, getStatus, getCachedDetail } from './api.js';
 import {
@@ -48,18 +46,6 @@ function loadGlobalxCodeUrls() {
     globalxCodeUrlsPromise = fetch(GLOBALX_CODE_URLS_JSON).then((r) => (r.ok ? r.json() : {}));
   }
   return globalxCodeUrlsPromise;
-}
-
-/** Global X 靜態快照（fetch 一次；僅 HOLDINGS_USE_STATIC_ONLY 時使用） */
-let globalxSnapshotPromise = null;
-
-function loadGlobalxHoldingsSnapshot() {
-  if (!globalxSnapshotPromise) {
-    globalxSnapshotPromise = fetch(HOLDINGS_STATIC_SNAPSHOT_URL).then((r) =>
-      r.ok ? r.json() : { by_code: {} },
-    );
-  }
-  return globalxSnapshotPromise;
 }
 
 function cacheFromFund(code, url, fund) {
@@ -151,45 +137,6 @@ async function loadConstituentsForCode(code, issuerCode) {
   if (issuerCode === 'globalx') {
     try {
       const candidates = getHoldingsCandidateCodes(code);
-
-      if (HOLDINGS_USE_STATIC_ONLY) {
-        const snapshot = await loadGlobalxHoldingsSnapshot();
-        const byCode = snapshot?.by_code && typeof snapshot.by_code === 'object' ? snapshot.by_code : {};
-        let fund = null;
-        let matched = null;
-        for (const c of candidates) {
-          const f = byCode[c];
-          if (f && f.holdings?.length) {
-            fund = f;
-            matched = c;
-            break;
-          }
-        }
-        const map = await loadGlobalxCodeUrls();
-        const url =
-          matched && map && typeof map === 'object'
-            ? map[matched]
-            : candidates.map((c) => map?.[c]).find(Boolean) || null;
-
-        if (fund?.holdings?.length) {
-          const cached = cacheFromFund(code, url || '', fund);
-          if (cached) {
-            constituentsCache[code] = cached;
-            return constituentsCache[code];
-          }
-        }
-
-        constituentsCache[code] = {
-          headers: [],
-          rows: [],
-          error:
-            Object.keys(byCode).length === 0
-              ? '靜態快照為空：請在專案根目錄執行 npm run snapshot:globalx 後再試'
-              : `此代碼不在快照中（嘗試過：${candidates.join(', ')}）`,
-          meta: url ? { sourceUrl: url } : {},
-        };
-        return constituentsCache[code];
-      }
 
       if (HOLDINGS_API_URL) {
         const map = await loadGlobalxCodeUrls();

@@ -7,7 +7,6 @@
     "dev": "vite",
     "dev:api": "py -3 api_server.py",
     "dev:full": "concurrently -n web,api -c cyan,magenta \"vite\" \"py -3 api_server.py\"",
-    "snapshot:globalx": "py -3 scripts/export_globalx_snapshot.py",
     "build": "vite build",
     "preview": "vite preview"
   },
