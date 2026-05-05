@@ -8,7 +8,6 @@ from cleaners.holdings_cleaner import build_bundle_from_page_results
 from holdings_cache import HoldingsCache, holdings_cache_enabled, normalize_cache_url
 from model.page_result import PageResult
 from provider_router import PROVIDERS, parse_providers, parse_urls_for_provider
-from scrapers.globalx_scraper import GlobalXScraper
 
 
 def _is_same_utc_day(ts: str, now: datetime) -> bool:
@@ -23,7 +22,7 @@ def _is_same_utc_day(ts: str, now: datetime) -> bool:
     return dt.astimezone(timezone.utc).date() == now.astimezone(timezone.utc).date()
 
 
-def _scrape_globalx_with_cache(scraper: GlobalXScraper, urls: List[str], bundle_key: str) -> List[PageResult]:
+def _scrape_with_daily_cache(scraper: Any, urls: List[str], bundle_key: str) -> List[PageResult]:
     """
     Reuse cached rows when today's scrape already happened for this URL.
     No lightweight "peek" request; if same day, return cache directly.
@@ -95,8 +94,8 @@ def lambda_handler(event: Any, context: Any) -> Dict[str, Any]:
         cfg = PROVIDERS[provider]
         urls = parse_urls_for_provider(ev, provider, cfg)
         scraper = cfg.scraper_factory()
-        if provider == "globalx" and holdings_cache_enabled() and isinstance(scraper, GlobalXScraper):
-            results = _scrape_globalx_with_cache(scraper, urls, cfg.bundle_provider_key)
+        if provider in {"globalx", "csop"} and holdings_cache_enabled():
+            results = _scrape_with_daily_cache(scraper, urls, cfg.bundle_provider_key)
         else:
             results = scraper.scrape_urls(urls)
         bundle = build_bundle_from_page_results(results, provider_key=cfg.bundle_provider_key)

@@ -5,6 +5,7 @@
 import {
   ID,
   GLOBALX_CODE_URLS_JSON,
+  CSOP_CODE_URLS_JSON,
   HOLDINGS_API_URL,
 } from './config.js';
 import { fetchEtfByCode, fetchHoldingsForUrls, getStatus, getCachedDetail } from './api.js';
@@ -41,6 +42,8 @@ const constituentsCache = {};
 let constituentsLoadingCode = null;
 /** Global X：code → 基金頁 URL（fetch 一次） */
 let globalxCodeUrlsPromise = null;
+/** CSOP：code → 基金頁 URL（fetch 一次） */
+let csopCodeUrlsPromise = null;
 
 function loadGlobalxCodeUrls() {
   if (!globalxCodeUrlsPromise) {
@@ -49,7 +52,14 @@ function loadGlobalxCodeUrls() {
   return globalxCodeUrlsPromise;
 }
 
-function cacheFromFund(code, url, fund) {
+function loadCsopCodeUrls() {
+  if (!csopCodeUrlsPromise) {
+    csopCodeUrlsPromise = fetch(CSOP_CODE_URLS_JSON).then((r) => (r.ok ? r.json() : {}));
+  }
+  return csopCodeUrlsPromise;
+}
+
+function cacheFromFund(code, url, fund, providerLabel) {
   const table = holdingsObjectsToTable(fund.holdings);
   if (!table.headers.length || !table.rows.length) return null;
   return {
@@ -60,6 +70,7 @@ function cacheFromFund(code, url, fund) {
       etfCode: fund.etfCode,
       asOfDate: fund.as_of_date,
       cachedAt: fund.cached_at,
+      providerLabel: providerLabel || '基金',
       rowCount: fund.row_count ?? table.rows.length,
       rowsDisplayed: table.rows.length,
     },
@@ -126,7 +137,7 @@ function selectCode(code) {
 }
 
 /**
- * 依發行商載入持股：globalx 經後端 scraper（HOLDINGS_API_URL）；其餘發行商僅示範資料。
+ * 依發行商載入持股：globalx/csop 經後端 scraper；其餘發行商暫用示範資料。
  * @param {string} code
  * @param {string} [issuerCode] 來自 selectedIssuer.issuerCode
  * @returns {Promise<object | Array<{ name: string, percent: number }> | null>}
@@ -136,12 +147,14 @@ async function loadConstituentsForCode(code, issuerCode) {
   if (!code) return null;
   if (constituentsCache[code] !== undefined) return constituentsCache[code];
 
-  if (issuerCode === 'globalx') {
+  if (issuerCode === 'globalx' || issuerCode === 'csop') {
     try {
       const candidates = getHoldingsCandidateCodes(code);
 
       if (HOLDINGS_API_URL) {
-        const map = await loadGlobalxCodeUrls();
+        const provider = issuerCode;
+        const providerLabel = provider === 'csop' ? 'CSOP' : 'Global X';
+        const map = provider === 'csop' ? await loadCsopCodeUrls() : await loadGlobalxCodeUrls();
         let url = null;
         for (const c of candidates) {
           const u = map && typeof map === 'object' ? map[c] : null;
@@ -151,13 +164,13 @@ async function loadConstituentsForCode(code, issuerCode) {
           }
         }
         if (url) {
-          const payload = await fetchHoldingsForUrls('globalx', [url]);
-          const bundle = payload?.results?.globalx;
+          const payload = await fetchHoldingsForUrls(provider, [url]);
+          const bundle = payload?.results?.[provider];
           const fund = bundle?.funds?.[0];
           const scrapeErr = bundle?.errors?.find((e) => e.url === url) ?? bundle?.errors?.[0];
 
           if (fund?.holdings?.length) {
-            const cached = cacheFromFund(code, url, fund);
+            const cached = cacheFromFund(code, url, fund, providerLabel);
             if (cached) {
               constituentsCache[code] = cached;
               return constituentsCache[code];
@@ -201,15 +214,16 @@ async function loadConstituentsForCode(code, issuerCode) {
 
 /**
  * Scraper 持股區塊標頭說明（代碼、日期、筆數、官網連結）
- * @param {{ sourceUrl?: string, etfCode?: string, asOfDate?: string, cachedAt?: string, rowCount?: number, rowsDisplayed?: number }} meta
+ * @param {{ sourceUrl?: string, etfCode?: string, asOfDate?: string, cachedAt?: string, providerLabel?: string, rowCount?: number, rowsDisplayed?: number }} meta
  * @returns {string}
  */
 function renderHoldingsScraperMeta(meta) {
   if (!meta || typeof meta !== 'object') return '';
   const dateStr = formatYYYYMMDD(meta.asOfDate);
   const cachedAtStr = formatIsoDateTime(meta.cachedAt);
+  const providerLabel = meta.providerLabel || '基金';
   const link = meta.sourceUrl
-    ? `<a href="${escapeHtml(meta.sourceUrl)}" class="holdings-scraper-meta__link" target="_blank" rel="noopener noreferrer">Global X 基金頁（資料來源）</a>`
+    ? `<a href="${escapeHtml(meta.sourceUrl)}" class="holdings-scraper-meta__link" target="_blank" rel="noopener noreferrer">${escapeHtml(providerLabel)} 基金頁（資料來源）</a>`
     : '';
   const codeDisp = meta.etfCode != null && meta.etfCode !== '' ? String(meta.etfCode) : '—';
   const n = meta.rowCount != null ? String(meta.rowCount) : meta.rowsDisplayed != null ? String(meta.rowsDisplayed) : '—';

@@ -1,4 +1,4 @@
-﻿"""
+"""
 CSOP: product page links to holdings download (.xls/.xlsx) via anchor title.
 
 Example:
@@ -35,9 +35,17 @@ _DIRECT_DOWNLOAD_HINT = "/cmsApi/Holdings/product/list/download"
 _DOWNLOAD_BASE_URL = "https://website-api.csopasset.com/cmsApi/Holdings/product/list/download"
 
 # Product slug fallback for cases where product page blocks scraping and no anchor is visible.
+# Keep explicit exceptions here; prefer dynamic extraction/derivation first.
 _FUND_ID_BY_SLUG = {
     "china-a50-etf": "CO-A50F",
-    "hk-nik225":"HK-NIK225"
+    "china-bond": "CO-B5",
+    "rmb-money-market-etf": "CO-USTB",
+    "chinext-etf": "CO-CNXT",
+    "new-china-sectors-etf": "HK-SPNC",
+    "money-market-etf": "CO-MMF",
+    "usd-money-market-etf": "CO-CUSF",
+    "csi-500-etf": "HK-CSI5",
+    "hk-nik225": "HK-NIK225",
 }
 
 
@@ -53,10 +61,36 @@ def _build_download_url(fund_id: str) -> str:
     return f"{_DOWNLOAD_BASE_URL}?fundId={fund_id}"
 
 
+def _extract_fund_id_from_html(main_html: str) -> Optional[str]:
+    # Common JSON/script patterns on CSOP pages, e.g. "fundId":"CO-A50F"
+    patterns = [
+        r'"fundId"\s*:\s*"([A-Za-z0-9-]+)"',
+        r"fundId\s*[:=]\s*['\"]([A-Za-z0-9-]+)['\"]",
+        r"download\?fundId=([A-Za-z0-9-]+)",
+    ]
+    for pat in patterns:
+        m = re.search(pat, main_html, flags=re.IGNORECASE)
+        if m:
+            return m.group(1).upper()
+    return None
+
+
+def _derive_fund_id_from_slug(slug: str) -> Optional[str]:
+    s = (slug or "").strip().lower()
+    if not s:
+        return None
+    # hk-hsi => HK-HSI, co-chst => CO-CHST
+    if s.startswith("hk-"):
+        return s.upper()
+    if s.startswith("co-"):
+        return s.upper()
+    return None
+
+
 def _fallback_download_url_by_slug(page_url: str) -> Optional[str]:
     parts = [p for p in urlparse(page_url).path.split("/") if p]
     slug = parts[-1].strip().lower() if parts else ""
-    fund_id = _FUND_ID_BY_SLUG.get(slug)
+    fund_id = _derive_fund_id_from_slug(slug) or _FUND_ID_BY_SLUG.get(slug)
     return _build_download_url(fund_id) if fund_id else None
 
 
@@ -76,6 +110,10 @@ def _extract_download_url(main_html: str, page_url: str) -> str:
     m = re.search(r"https://website-api\.csopasset\.com/cmsApi/Holdings/product/list/download\?[^\s\"'>]+", main_html)
     if m:
         return m.group(0)
+
+    fund_id_from_html = _extract_fund_id_from_html(main_html)
+    if fund_id_from_html:
+        return _build_download_url(fund_id_from_html)
 
     slug_fallback = _fallback_download_url_by_slug(page_url)
     if slug_fallback:

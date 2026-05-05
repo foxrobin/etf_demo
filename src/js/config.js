@@ -13,6 +13,8 @@ export const HOLDINGS_API_URL = (import.meta.env.VITE_HOLDINGS_API_URL ?? '/lamb
 
 /** Global X：代碼 → 基金頁 URL（取代昔日 csv_docs manifest） */
 export const GLOBALX_CODE_URLS_JSON = '/globalx_code_urls.json';
+/** CSOP：代碼 → 基金頁 URL */
+export const CSOP_CODE_URLS_JSON = '/csop_code_urls.json';
 
 /** 頁面元素 ID */
 export const ID = {
