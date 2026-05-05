@@ -70,17 +70,19 @@ class HoldingsCache:
         entry = per.get(normalized_url)
         return entry if isinstance(entry, dict) else None
 
-    def set_from_page_result(self, bundle_provider_key: str, normalized_url: str, r: PageResult) -> None:
+    def set_from_page_result(self, bundle_provider_key: str, normalized_url: str, r: PageResult) -> Optional[str]:
         if not r.ok or not r.rows:
-            return
+            return None
+        now_iso = datetime.now(timezone.utc).isoformat()
         prov = self._data.setdefault("providers", {})
         per = prov.setdefault(bundle_provider_key, {})
         per[normalized_url] = {
             "as_of_date": r.as_of_date or "",
             "etf_code": r.etf_code or "",
-            "cached_at": datetime.now(timezone.utc).isoformat(),
+            "cached_at": now_iso,
             "rows": r.rows,
         }
+        return now_iso
 
     def save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)

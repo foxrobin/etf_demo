@@ -52,6 +52,7 @@ def build_bundle_from_page_results(
                 "url": r.url,
                 "etfCode": r.etf_code,
                 "as_of_date": r.as_of_date,
+                "cached_at": r.cached_at,
                 "row_count": len(r.rows) - 1 if r.rows else 0,
                 "holdings": rows_to_holdings_objects(r.rows),
             }

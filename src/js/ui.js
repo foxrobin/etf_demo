@@ -15,6 +15,7 @@ import {
   getHoldingsCandidateCodes,
   holdingsObjectsToTable,
   formatYYYYMMDD,
+  formatIsoDateTime,
 } from './data.js';
 import { escapeHtml } from './utils.js';
 import { LOGICAL_FIELDS, VALUE_CD_LABELS, LANG_TABS } from './etf-fields.js';
@@ -58,6 +59,7 @@ function cacheFromFund(code, url, fund) {
       sourceUrl: fund.url || url,
       etfCode: fund.etfCode,
       asOfDate: fund.as_of_date,
+      cachedAt: fund.cached_at,
       rowCount: fund.row_count ?? table.rows.length,
       rowsDisplayed: table.rows.length,
     },
@@ -199,12 +201,13 @@ async function loadConstituentsForCode(code, issuerCode) {
 
 /**
  * Scraper 持股區塊標頭說明（代碼、日期、筆數、官網連結）
- * @param {{ sourceUrl?: string, etfCode?: string, asOfDate?: string, rowCount?: number, rowsDisplayed?: number }} meta
+ * @param {{ sourceUrl?: string, etfCode?: string, asOfDate?: string, cachedAt?: string, rowCount?: number, rowsDisplayed?: number }} meta
  * @returns {string}
  */
 function renderHoldingsScraperMeta(meta) {
   if (!meta || typeof meta !== 'object') return '';
   const dateStr = formatYYYYMMDD(meta.asOfDate);
+  const cachedAtStr = formatIsoDateTime(meta.cachedAt);
   const link = meta.sourceUrl
     ? `<a href="${escapeHtml(meta.sourceUrl)}" class="holdings-scraper-meta__link" target="_blank" rel="noopener noreferrer">Global X 基金頁（資料來源）</a>`
     : '';
@@ -212,8 +215,9 @@ function renderHoldingsScraperMeta(meta) {
   const n = meta.rowCount != null ? String(meta.rowCount) : meta.rowsDisplayed != null ? String(meta.rowsDisplayed) : '—';
   return `
     <div class="holdings-scraper-meta">
-      <span class="holdings-scraper-meta__item">爬蟲／官網揭露代碼：<strong>${escapeHtml(codeDisp)}</strong></span>
+      <span class="holdings-scraper-meta__item">官網代碼：<strong>${escapeHtml(codeDisp)}</strong></span>
       <span class="holdings-scraper-meta__item">資料日期：<strong>${escapeHtml(dateStr)}</strong></span>
+      <span class="holdings-scraper-meta__item">最新爬取時間：<strong>${escapeHtml(cachedAtStr)}</strong></span>
       <span class="holdings-scraper-meta__item">持股列數：<strong>${escapeHtml(n)}</strong>（表格下方完整列出）</span>
       ${link ? `<span class="holdings-scraper-meta__item">${link}</span>` : ''}
     </div>

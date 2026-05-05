@@ -11,33 +11,48 @@ from provider_router import PROVIDERS, parse_providers, parse_urls_for_provider
 from scrapers.globalx_scraper import GlobalXScraper
 
 
+def _is_same_utc_day(ts: str, now: datetime) -> bool:
+    if not ts:
+        return False
+    try:
+        dt = datetime.fromisoformat(str(ts))
+    except ValueError:
+        return False
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc).date() == now.astimezone(timezone.utc).date()
+
+
 def _scrape_globalx_with_cache(scraper: GlobalXScraper, urls: List[str], bundle_key: str) -> List[PageResult]:
     """
-    If disk cache has the same as_of_date as a lightweight peek, reuse cached rows (no table parse).
-    No cache entry: one full scrape only (no extra peek).
+    Reuse cached rows when today's scrape already happened for this URL.
+    No lightweight "peek" request; if same day, return cache directly.
     """
     cache = HoldingsCache.load()
     out: List[PageResult] = []
     dirty = False
+    now = datetime.now(timezone.utc)
     for url in urls:
         key = normalize_cache_url(url)
         entry = cache.get(bundle_key, key)
         if entry and entry.get("rows"):
-            code, as_of = scraper.peek_etf_code_and_date(url)
-            if code and as_of and entry.get("as_of_date") == as_of:
+            cached_at = entry.get("cached_at")
+            if _is_same_utc_day(str(cached_at or ""), now):
                 out.append(
                     PageResult(
                         url=url,
                         ok=True,
-                        etf_code=code or entry.get("etf_code"),
-                        as_of_date=as_of,
+                        etf_code=entry.get("etf_code"),
+                        as_of_date=entry.get("as_of_date"),
+                        cached_at=str(cached_at or ""),
                         rows=entry["rows"],
                     )
                 )
                 continue
         r = scraper.scrape_url(url)
         if r.ok:
-            cache.set_from_page_result(bundle_key, key, r)
+            cached_at = cache.set_from_page_result(bundle_key, key, r)
+            r.cached_at = cached_at
             dirty = True
         out.append(r)
     if dirty:
