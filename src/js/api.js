@@ -2,7 +2,7 @@
  * ETF 資訊 API（EtfInfo.do）
  */
 
-import { API_URL_DEFAULT } from './config.js';
+import { API_URL_DEFAULT, HOLDINGS_API_URL } from './config.js';
 
 /** 依代碼快取的 ETF 詳情 */
 const etfDetailByCode = {};
@@ -149,4 +149,25 @@ export function fetchEtfByCode(code) {
       setStatus(msg, true);
       throw e;
     });
+}
+
+/**
+ * 向 holdings Lambda／api_server 取得持股 bundle（與 lambda_handler 請求格式一致）
+ * @param {string} provider - 例如 globalx
+ * @param {string[]} urls
+ * @returns {Promise<object | null>}
+ */
+export async function fetchHoldingsForUrls(provider, urls) {
+  const base = HOLDINGS_API_URL;
+  if (!base || !urls?.length) return null;
+  const res = await fetch(base, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      providers: [provider],
+      provider_urls: { [provider]: urls },
+    }),
+  });
+  if (!res.ok) throw new Error(`Holdings API HTTP ${res.status}`);
+  return res.json();
 }

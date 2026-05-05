@@ -1,5 +1,5 @@
 /**
- * 資料解析：etf_info.csv、code_list.json、示範用成分
+ * 資料解析：etf_info.csv、code_list.json、示範用成分、持股物件轉表格
  */
 
 /**
@@ -137,40 +137,39 @@ export function getHoldingsCandidateCodes(code) {
 }
 
 /**
- * 回傳用於模糊匹配 _full_holdings_*.csv 的日期：今天 + 昨天起往前 N 天
- * @param {number} [days=90] 昨天起往前幾天（拉長以涵蓋較舊的檔案）
- * @returns {string[]}
+ * Lambda bundle 的 holdings 陣列（物件列）轉成表格欄位；合併所有列欄位，與 scraper 順序一致且不遺漏。
+ * @param {Record<string, string>[]} holdings
+ * @returns {{ headers: string[], rows: string[][] }}
  */
-export function getRecentDatesYYYYMMDD(days = 90) {
-  const out = [];
-  const d = new Date();
-  const toStr = (x) => {
-    const y = x.getFullYear();
-    const m = String(x.getMonth() + 1).padStart(2, '0');
-    const day = String(x.getDate()).padStart(2, '0');
-    return `${y}${m}${day}`;
-  };
-  out.push(toStr(d));
-  for (let i = 1; i <= days; i++) {
-    d.setDate(d.getDate() - 1);
-    out.push(toStr(d));
+export function holdingsObjectsToTable(holdings) {
+  if (!Array.isArray(holdings) || holdings.length === 0) return { headers: [], rows: [] };
+  const first = holdings[0];
+  if (!first || typeof first !== 'object') return { headers: [], rows: [] };
+  const ordered = [...Object.keys(first)];
+  const seen = new Set(ordered);
+  for (let i = 1; i < holdings.length; i++) {
+    const obj = holdings[i];
+    if (!obj || typeof obj !== 'object') continue;
+    for (const k of Object.keys(obj)) {
+      if (!seen.has(k)) {
+        seen.add(k);
+        ordered.push(k);
+      }
+    }
   }
-  return out;
+  const rows = holdings.map((obj) =>
+    ordered.map((h) => String((obj && typeof obj === 'object' ? obj[h] : '') ?? '')),
+  );
+  return { headers: ordered, rows };
 }
 
 /**
- * 解析 full_holdings CSV，保留所有欄位
- * @param {string} csvText
- * @returns {{ headers: string[], rows: string[][] }}
+ * Global X as_of_date（YYYYMMDD）顯示
+ * @param {string} asOf
+ * @returns {string}
  */
-export function parseHoldingsCsv(csvText) {
-  const lines = csvText.split('\n').map((l) => l.trim()).filter(Boolean);
-  if (lines.length < 2) return { headers: [], rows: [] };
-  const headers = parseCsvLine(lines[0]);
-  const rows = [];
-  for (let i = 1; i < lines.length; i++) {
-    const cols = parseCsvLine(lines[i]);
-    rows.push(headers.map((_, j) => (cols[j] ?? '').trim()));
-  }
-  return { headers, rows };
+export function formatYYYYMMDD(asOf) {
+  const s = String(asOf ?? '').trim();
+  if (/^\d{8}$/.test(s)) return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
+  return s || '—';
 }

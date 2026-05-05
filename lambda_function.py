@@ -2,10 +2,50 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from cleaners.holdings_cleaner import build_bundle_from_page_results
+from holdings_cache import HoldingsCache, holdings_cache_enabled, normalize_cache_url
+from model.page_result import PageResult
 from provider_router import PROVIDERS, parse_providers, parse_urls_for_provider
+from scrapers.globalx_scraper import GlobalXScraper
+
+
+def _scrape_globalx_with_cache(scraper: GlobalXScraper, urls: List[str], bundle_key: str) -> List[PageResult]:
+    """
+    If disk cache has the same as_of_date as a lightweight peek, reuse cached rows (no table parse).
+    No cache entry: one full scrape only (no extra peek).
+    """
+    cache = HoldingsCache.load()
+    out: List[PageResult] = []
+    dirty = False
+    for url in urls:
+        key = normalize_cache_url(url)
+        entry = cache.get(bundle_key, key)
+        if entry and entry.get("rows"):
+            code, as_of = scraper.peek_etf_code_and_date(url)
+            if code and as_of and entry.get("as_of_date") == as_of:
+                out.append(
+                    PageResult(
+                        url=url,
+                        ok=True,
+                        etf_code=code or entry.get("etf_code"),
+                        as_of_date=as_of,
+                        rows=entry["rows"],
+                    )
+                )
+                continue
+        r = scraper.scrape_url(url)
+        if r.ok:
+            cache.set_from_page_result(bundle_key, key, r)
+            dirty = True
+        out.append(r)
+    if dirty:
+        try:
+            cache.save()
+        except OSError:
+            pass
+    return out
 
 
 def lambda_handler(event: Any, context: Any) -> Dict[str, Any]:
@@ -40,7 +80,10 @@ def lambda_handler(event: Any, context: Any) -> Dict[str, Any]:
         cfg = PROVIDERS[provider]
         urls = parse_urls_for_provider(ev, provider, cfg)
         scraper = cfg.scraper_factory()
-        results = scraper.scrape_urls(urls)
+        if provider == "globalx" and holdings_cache_enabled() and isinstance(scraper, GlobalXScraper):
+            results = _scrape_globalx_with_cache(scraper, urls, cfg.bundle_provider_key)
+        else:
+            results = scraper.scrape_urls(urls)
         bundle = build_bundle_from_page_results(results, provider_key=cfg.bundle_provider_key)
         bundles[provider] = bundle
         summary[provider] = {
@@ -72,6 +115,6 @@ if __name__ == "__main__":
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
 
-    out = lambda_handler({"providers": [""]}, None) #default should set globalx? or full list?
+    out = lambda_handler({"providers": ["globalx"]}, None)
     payload = json.loads(out["body"])
     print(json.dumps(payload, ensure_ascii=False, indent=2))

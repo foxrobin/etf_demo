@@ -2,10 +2,22 @@
  * UI：發行商列表、詳情區、下拉選單、API 狀態與事件綁定
  */
 
-import { ID, HOLDINGS_BY_ISSUER, HOLDINGS_MANIFEST_URL } from './config.js';
-import { fetchEtfByCode, setStatus, getStatus, getCachedDetail } from './api.js';
-import { parseEtfInfo, applyCodeList, getConstituents, parseHoldingsCsv, getHoldingsCandidateCodes } from './data.js';
-import { parseHoldingsXls } from './holdings-xls.js';
+import {
+  ID,
+  GLOBALX_CODE_URLS_JSON,
+  HOLDINGS_API_URL,
+  HOLDINGS_STATIC_SNAPSHOT_URL,
+  HOLDINGS_USE_STATIC_ONLY,
+} from './config.js';
+import { fetchEtfByCode, fetchHoldingsForUrls, getStatus, getCachedDetail } from './api.js';
+import {
+  parseEtfInfo,
+  applyCodeList,
+  getConstituents,
+  getHoldingsCandidateCodes,
+  holdingsObjectsToTable,
+  formatYYYYMMDD,
+} from './data.js';
 import { escapeHtml } from './utils.js';
 import { LOGICAL_FIELDS, VALUE_CD_LABELS, LANG_TABS } from './etf-fields.js';
 
@@ -28,10 +40,43 @@ let selectedCode = null;
 const constituentsCache = {};
 /** 正在載入持股的 code，用於顯示 loading 且不重複觸發 */
 let constituentsLoadingCode = null;
-/** 各 issuer 的 manifest（code → 檔名），由單一 holdings_manifest.json 載入後分發 */
-const holdingsManifestByIssuer = {};
-/** 是否已載入合併 manifest（只 fetch 一次） */
-let holdingsManifestLoaded = false;
+/** Global X：code → 基金頁 URL（fetch 一次） */
+let globalxCodeUrlsPromise = null;
+
+function loadGlobalxCodeUrls() {
+  if (!globalxCodeUrlsPromise) {
+    globalxCodeUrlsPromise = fetch(GLOBALX_CODE_URLS_JSON).then((r) => (r.ok ? r.json() : {}));
+  }
+  return globalxCodeUrlsPromise;
+}
+
+/** Global X 靜態快照（fetch 一次；僅 HOLDINGS_USE_STATIC_ONLY 時使用） */
+let globalxSnapshotPromise = null;
+
+function loadGlobalxHoldingsSnapshot() {
+  if (!globalxSnapshotPromise) {
+    globalxSnapshotPromise = fetch(HOLDINGS_STATIC_SNAPSHOT_URL).then((r) =>
+      r.ok ? r.json() : { by_code: {} },
+    );
+  }
+  return globalxSnapshotPromise;
+}
+
+function cacheFromFund(code, url, fund) {
+  const table = holdingsObjectsToTable(fund.holdings);
+  if (!table.headers.length || !table.rows.length) return null;
+  return {
+    headers: table.headers,
+    rows: table.rows,
+    meta: {
+      sourceUrl: fund.url || url,
+      etfCode: fund.etfCode,
+      asOfDate: fund.as_of_date,
+      rowCount: fund.row_count ?? table.rows.length,
+      rowsDisplayed: table.rows.length,
+    },
+  };
+}
 
 // ---------------------------------------------------------------------------
 // 發行商列表
@@ -92,131 +137,140 @@ function selectCode(code) {
   }
 }
 
-async function loadHoldingsManifest(issuerCode) {
-  if (holdingsManifestByIssuer[issuerCode] !== undefined) return holdingsManifestByIssuer[issuerCode];
-  if (!holdingsManifestLoaded) {
-    try {
-      const res = await fetch(HOLDINGS_MANIFEST_URL);
-      if (res.ok) {
-        const data = await res.json();
-        if (data && typeof data === 'object') {
-          for (const k of Object.keys(data)) holdingsManifestByIssuer[k] = data[k];
-          holdingsManifestLoaded = true;
-        }
-      }
-    } catch (_) {}
-  }
-  return holdingsManifestByIssuer[issuerCode] ?? null;
-}
-
 /**
- * 依發行商載入持股：globalx 用 CSV、ishares 用 XLS、bosera 用 XLSX，皆用 manifest，同一 UI 顯示。
- * globalx / bosera 用 getHoldingsCandidateCodes（3字、2字、9字、8xxx）對應檔名。
+ * 依發行商載入持股：globalx 經後端 scraper（HOLDINGS_API_URL）；其餘發行商僅示範資料。
  * @param {string} code
  * @param {string} [issuerCode] 來自 selectedIssuer.issuerCode
- * @returns {Promise<{ headers: string[], rows: string[][] } | Array<{ name: string, percent: number }> | null>}
+ * @returns {Promise<object | Array<{ name: string, percent: number }> | null>}
  */
 async function loadConstituentsForCode(code, issuerCode) {
   code = code ? String(code).trim() : '';
   if (!code) return null;
   if (constituentsCache[code] !== undefined) return constituentsCache[code];
-  const config = issuerCode ? HOLDINGS_BY_ISSUER[issuerCode] : null;
-  if (!config) {
-    const fallback = getConstituents(code) || null;
-    constituentsCache[code] = fallback;
-    return fallback;
-  }
-  await loadHoldingsManifest(issuerCode);
-  const manifest = holdingsManifestByIssuer[issuerCode];
-  const base = (config.base || '').replace(/\/?$/, '/');
 
-  if (config.type === 'csv') {
-    const candidates = getHoldingsCandidateCodes(code);
-    for (const tryCode of candidates) {
-      const filename = manifest && manifest[tryCode];
-      if (!filename) continue;
-      try {
-        const res = await fetch(base + filename);
-        if (!res.ok) continue;
-        const text = await res.text();
-        const { headers, rows } = parseHoldingsCsv(text);
-        if (headers.length && rows.length) {
-          constituentsCache[code] = { headers, rows };
-          return constituentsCache[code];
-        }
-      } catch (_) {}
-    }
-  } else if (config.type === 'xls') {
-    const tryCodes = config.useCandidateCodes ? getHoldingsCandidateCodes(code) : [code, String(code)];
-    for (const tryCode of tryCodes) {
-      const filename = manifest && (manifest[tryCode] || manifest[String(tryCode)]);
-      if (!filename) continue;
-      try {
-        const res = await fetch(base + filename);
-        const contentType = (res.headers.get('Content-Type') || '').toLowerCase();
-        if (res.ok && contentType.includes('text/html')) continue; /* 略過 SPA fallback */
-        if (res.ok) {
-          const ab = await res.arrayBuffer();
-          const peek = new TextDecoder().decode(ab.slice(0, 512));
-          if (!/<\s*!?html|<\s*head|<\s*meta\s/i.test(peek)) {
-            const { headers, rows } = parseHoldingsXls(ab);
-            if (headers.length || rows.length) {
-              constituentsCache[code] = { headers, rows };
-              return constituentsCache[code];
-            }
+  if (issuerCode === 'globalx') {
+    try {
+      const candidates = getHoldingsCandidateCodes(code);
+
+      if (HOLDINGS_USE_STATIC_ONLY) {
+        const snapshot = await loadGlobalxHoldingsSnapshot();
+        const byCode = snapshot?.by_code && typeof snapshot.by_code === 'object' ? snapshot.by_code : {};
+        let fund = null;
+        let matched = null;
+        for (const c of candidates) {
+          const f = byCode[c];
+          if (f && f.holdings?.length) {
+            fund = f;
+            matched = c;
+            break;
           }
         }
-      } catch (_) {}
-    }
-  } else if (config.type === 'xlsx') {
-    const candidates = getHoldingsCandidateCodes(code);
-    for (const tryCode of candidates) {
-      const filename = manifest && manifest[tryCode];
-      if (!filename) continue;
-      try {
-        const res = await fetch(base + filename);
-        if (!res.ok) continue;
-        const ab = await res.arrayBuffer();
-        const { headers, rows } = parseHoldingsXls(ab);
-        if (headers.length || rows.length) {
-          constituentsCache[code] = { headers, rows };
-          return constituentsCache[code];
-        }
-      } catch (_) {}
-    }
-  } else if (config.type === 'mixed') {
-    const candidates = getHoldingsCandidateCodes(code);
-    for (const tryCode of candidates) {
-      const filename = manifest && (manifest[tryCode] || manifest[String(tryCode)]);
-      if (!filename) continue;
-      try {
-        const res = await fetch(base + filename);
-        if (!res.ok) continue;
-        if (filename.toLowerCase().endsWith('.csv')) {
-          const text = await res.text();
-          const { headers, rows } = parseHoldingsCsv(text);
-          if (headers.length && rows.length) {
-            constituentsCache[code] = { headers, rows };
+        const map = await loadGlobalxCodeUrls();
+        const url =
+          matched && map && typeof map === 'object'
+            ? map[matched]
+            : candidates.map((c) => map?.[c]).find(Boolean) || null;
+
+        if (fund?.holdings?.length) {
+          const cached = cacheFromFund(code, url || '', fund);
+          if (cached) {
+            constituentsCache[code] = cached;
             return constituentsCache[code];
           }
-        } else {
-          const ab = await res.arrayBuffer();
-          const peek = new TextDecoder().decode(ab.slice(0, 512));
-          if (!/<\s*!?html|<\s*head|<\s*meta\s/i.test(peek)) {
-            const { headers, rows } = parseHoldingsXls(ab);
-            if (headers.length || rows.length) {
-              constituentsCache[code] = { headers, rows };
+        }
+
+        constituentsCache[code] = {
+          headers: [],
+          rows: [],
+          error:
+            Object.keys(byCode).length === 0
+              ? '靜態快照為空：請在專案根目錄執行 npm run snapshot:globalx 後再試'
+              : `此代碼不在快照中（嘗試過：${candidates.join(', ')}）`,
+          meta: url ? { sourceUrl: url } : {},
+        };
+        return constituentsCache[code];
+      }
+
+      if (HOLDINGS_API_URL) {
+        const map = await loadGlobalxCodeUrls();
+        let url = null;
+        for (const c of candidates) {
+          const u = map && typeof map === 'object' ? map[c] : null;
+          if (u) {
+            url = u;
+            break;
+          }
+        }
+        if (url) {
+          const payload = await fetchHoldingsForUrls('globalx', [url]);
+          const bundle = payload?.results?.globalx;
+          const fund = bundle?.funds?.[0];
+          const scrapeErr = bundle?.errors?.find((e) => e.url === url) ?? bundle?.errors?.[0];
+
+          if (fund?.holdings?.length) {
+            const cached = cacheFromFund(code, url, fund);
+            if (cached) {
+              constituentsCache[code] = cached;
               return constituentsCache[code];
             }
           }
+
+          if (scrapeErr) {
+            constituentsCache[code] = {
+              headers: [],
+              rows: [],
+              error: scrapeErr.error || '持股資料取得失敗',
+              meta: { sourceUrl: url },
+            };
+            return constituentsCache[code];
+          }
+
+          constituentsCache[code] = {
+            headers: [],
+            rows: [],
+            error: '尚未取得持股資料（回應無 holdings）',
+            meta: { sourceUrl: url },
+          };
+          return constituentsCache[code];
         }
-      } catch (_) {}
+      }
+    } catch (e) {
+      constituentsCache[code] = {
+        headers: [],
+        rows: [],
+        error: e instanceof Error ? e.message : String(e),
+        meta: {},
+      };
+      return constituentsCache[code];
     }
   }
 
   const fallback = getConstituents(code) || null;
   constituentsCache[code] = fallback;
   return fallback;
+}
+
+/**
+ * Scraper 持股區塊標頭說明（代碼、日期、筆數、官網連結）
+ * @param {{ sourceUrl?: string, etfCode?: string, asOfDate?: string, rowCount?: number, rowsDisplayed?: number }} meta
+ * @returns {string}
+ */
+function renderHoldingsScraperMeta(meta) {
+  if (!meta || typeof meta !== 'object') return '';
+  const dateStr = formatYYYYMMDD(meta.asOfDate);
+  const link = meta.sourceUrl
+    ? `<a href="${escapeHtml(meta.sourceUrl)}" class="holdings-scraper-meta__link" target="_blank" rel="noopener noreferrer">Global X 基金頁（資料來源）</a>`
+    : '';
+  const codeDisp = meta.etfCode != null && meta.etfCode !== '' ? String(meta.etfCode) : '—';
+  const n = meta.rowCount != null ? String(meta.rowCount) : meta.rowsDisplayed != null ? String(meta.rowsDisplayed) : '—';
+  return `
+    <div class="holdings-scraper-meta">
+      <span class="holdings-scraper-meta__item">爬蟲／官網揭露代碼：<strong>${escapeHtml(codeDisp)}</strong></span>
+      <span class="holdings-scraper-meta__item">資料日期：<strong>${escapeHtml(dateStr)}</strong></span>
+      <span class="holdings-scraper-meta__item">持股列數：<strong>${escapeHtml(n)}</strong>（表格下方完整列出）</span>
+      ${link ? `<span class="holdings-scraper-meta__item">${link}</span>` : ''}
+    </div>
+  `;
 }
 
 /**
@@ -419,25 +473,45 @@ async function renderDetail() {
     apiBlock = '<p class="no-data">選擇代碼後會從 EtfInfo.do 取得該 ETF 詳情；若失敗請檢查 API 網址或網路。</p>';
   }
 
-  // 成分表（優先從 CSV 顯示全部欄位，否則示範數據；載入中顯示 loading）
+  // 成分表（Global X：scraper 全部欄位列；否則示範數據；載入中顯示 loading）
   let constituentTable = '';
   const constituentsLoading = needLoadConstituents || constituentsLoadingCode === selectedCode;
-  const hasCsvHoldings = selectedCode && constituents && constituents.headers && constituents.rows;
+  const isScraperTable =
+    selectedCode &&
+    constituents &&
+    typeof constituents === 'object' &&
+    !Array.isArray(constituents) &&
+    Array.isArray(constituents.headers) &&
+    Array.isArray(constituents.rows);
+  const hasTableHoldings =
+    isScraperTable && constituents.headers.length > 0 && constituents.rows.length > 0;
+  const hasHoldingsError =
+    isScraperTable && constituents.error && !hasTableHoldings;
   const hasMockHoldings = selectedCode && constituents && Array.isArray(constituents) && constituents.length;
   if (constituentsLoading) {
     constituentTable = `<h3 class="detail-inner__heading">持股明細 (ETF ${escapeHtml(selectedCode)})</h3><div class="loading">載入持股中…</div>`;
-  } else if (hasCsvHoldings) {
-    const { headers, rows } = constituents;
+  } else if (hasTableHoldings) {
+    const { headers, rows, meta } = constituents;
+    const metaHtml = renderHoldingsScraperMeta(meta);
     constituentTable = `
-      <h3 class="detail-inner__heading">持股明細 (ETF ${escapeHtml(selectedCode)})</h3>
-      <div class="constituent-table-wrap">
-        <table class="constituent-table">
+      <h3 class="detail-inner__heading">持股明細 (ETF ${escapeHtml(selectedCode)}) — Global X 網頁持股表</h3>
+      ${metaHtml}
+      <div class="constituent-table-wrap constituent-table-wrap--scraper">
+        <table class="constituent-table constituent-table--scraper">
           <thead><tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
           <tbody>
             ${rows.map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join('')}</tr>`).join('')}
           </tbody>
         </table>
       </div>
+    `;
+  } else if (hasHoldingsError) {
+    const { error, meta } = constituents;
+    const metaHtml = renderHoldingsScraperMeta(meta);
+    constituentTable = `
+      <h3 class="detail-inner__heading">持股明細 (ETF ${escapeHtml(selectedCode)})</h3>
+      ${metaHtml}
+      <p class="holdings-scraper-error">${escapeHtml(error)}</p>
     `;
   } else if (hasMockHoldings) {
     constituentTable = `

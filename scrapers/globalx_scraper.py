@@ -67,6 +67,18 @@ class GlobalXScraper:
         self.timeout = timeout
         self.session = session or requests.Session()
 
+    def peek_etf_code_and_date(self, url: str) -> tuple[Optional[str], Optional[str]]:
+        """
+        One GET + regex inference only (no holdings table parse).
+        Used to compare live as_of_date with disk cache before full scrape.
+        """
+        try:
+            resp = self.session.get(url, timeout=self.timeout)
+            resp.raise_for_status()
+            return _infer_etf_code_and_date(resp.text, url)
+        except Exception:
+            return None, None
+
     def scrape_url(self, url: str) -> PageResult:
         try:
             resp = self.session.get(url, timeout=self.timeout)
